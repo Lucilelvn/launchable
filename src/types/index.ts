@@ -1,8 +1,32 @@
 export interface IdeaInput {
   concept: string;
+  audience?: string;
+  timeline?: string;
+}
+
+export interface DimensionScore {
+  score: number;
+  summary: string;
 }
 
 export interface Assessment {
+  demand: DimensionScore;
+  competition: DimensionScore;
+  shippability: DimensionScore;
+  verdict: string;
+  ai_wrapper_flag: boolean;
+  mutations: AssessmentMutation[];
+  build_tool: string;
+  build_prompt: string;
+}
+
+export interface AssessmentMutation {
+  type: 'pivot' | 'niche' | 'expand';
+  idea: string;
+}
+
+/** @deprecated Use Assessment instead — kept for explore flow compatibility */
+export interface LegacyAssessment {
   demand: number;
   competition: number;
   shippability: number;

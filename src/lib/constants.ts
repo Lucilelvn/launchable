@@ -1,6 +1,7 @@
 export const FREE_ASSESSMENT_LIMIT = 3;
 export const STORAGE_KEY_USAGE = 'launchable_usage_count';
 export const STORAGE_KEY_HISTORY = 'launchable_idea_history';
+export const STORAGE_KEY_PREMIUM = 'launchable_premium';
 
 export const BUILD_TOOLS = {
   'claude-code': {

@@ -1,58 +1,79 @@
 import { useNavigate } from 'react-router-dom';
-import { Lightbulb, Compass } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="max-w-2xl w-full text-center space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-            <span className="text-brand-400">Launchable</span>
-          </h1>
-          <p className="text-xl text-text-secondary max-w-lg mx-auto">
-            Turn a vague idea into a ready-to-paste prompt for your favorite AI
-            build tool. No product experience needed.
-          </p>
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1.5">
+            <Rocket className="h-4 w-4 text-white" />
+          </div>
+          <span className="font-bold text-lg">Launchable</span>
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 max-w-lg mx-auto pt-4">
+        <div className="flex items-center gap-4">
+          <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">
+            Login
+          </button>
           <button
             onClick={() => navigate('/assess')}
-            className="group flex flex-col items-center gap-3 rounded-2xl bg-surface-raised p-6 border border-white/5 hover:border-brand-500/40 hover:bg-surface-overlay transition-all cursor-pointer"
+            className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
           >
-            <div className="rounded-full bg-brand-500/10 p-3 group-hover:bg-brand-500/20 transition-colors">
-              <Lightbulb className="h-6 w-6 text-brand-400" />
-            </div>
-            <div>
-              <p className="font-semibold text-lg">I have an idea</p>
-              <p className="text-sm text-text-muted mt-1">
-                Get it scored, mutated, and turned into a build prompt
-              </p>
-            </div>
+            Get Started
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <main className="max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
+        <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight">
+          Go from feeling to{' '}
+          <br className="hidden sm:block" />
+          something{' '}
+          <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-pink-300 bg-clip-text text-transparent">
+            launchable
+          </span>
+        </h1>
+
+        <p className="mt-6 text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
+          You saw the demo. You want in. Launchable turns what's in your
+          head into a prompt you can paste into any AI build tool in minutes.
+        </p>
+
+        {/* Cards */}
+        <div className="grid gap-6 sm:grid-cols-2 mt-14 max-w-4xl mx-auto items-stretch">
+          <button
+            onClick={() => navigate('/assess')}
+            className="group rounded-2xl border border-gray-200 bg-white p-8 text-center hover:border-orange-300 hover:shadow-lg hover:shadow-orange-100/50 transition-all cursor-pointer"
+          >
+            <h2 className="text-xl font-bold">You have an idea</h2>
+            <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+              Drop in your concept. Get an honest score, 3 smarter mutations,
+              and a build-ready prompt.
+            </p>
+            <span className="inline-block mt-5 text-sm font-semibold rounded-full px-5 py-2 transition-all border border-orange-200 bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent group-hover:text-white group-hover:bg-clip-padding group-hover:border-transparent group-hover:shadow-md group-hover:shadow-orange-200/50">
+              Assess your idea
+            </span>
           </button>
 
           <button
             onClick={() => navigate('/explore')}
-            className="group flex flex-col items-center gap-3 rounded-2xl bg-surface-raised p-6 border border-white/5 hover:border-brand-500/40 hover:bg-surface-overlay transition-all cursor-pointer"
+            className="group rounded-2xl border border-gray-200 bg-white p-8 text-center hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100/50 transition-all cursor-pointer"
           >
-            <div className="rounded-full bg-brand-500/10 p-3 group-hover:bg-brand-500/20 transition-colors">
-              <Compass className="h-6 w-6 text-brand-400" />
-            </div>
-            <div>
-              <p className="font-semibold text-lg">I don't know where to start</p>
-              <p className="text-sm text-text-muted mt-1">
-                We'll help you discover an idea worth building
-              </p>
-            </div>
+            <h2 className="text-xl font-bold">You don't know where to start</h2>
+            <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+              A few smart questions about your life, work, and frustrations
+              and we'll surface something worth building.
+            </p>
+            <span className="inline-block mt-5 text-sm font-semibold rounded-full px-5 py-2 transition-all border border-pink-200 bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent group-hover:text-white group-hover:bg-clip-padding group-hover:border-transparent group-hover:shadow-md group-hover:shadow-pink-200/50">
+              Let's find your idea
+            </span>
           </button>
         </div>
-
-        <p className="text-xs text-text-muted pt-6">
-          Works with Claude Code, Lovable, Bolt, and Replit
-        </p>
-      </div>
+      </main>
     </div>
   );
 }
