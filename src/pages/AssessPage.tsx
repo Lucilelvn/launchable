@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
-  ArrowLeft,
   ArrowRight,
   TrendingUp,
   Shield,
@@ -9,7 +8,6 @@ import {
   AlertTriangle,
   Sparkles,
   Zap,
-  Rocket,
   Search,
   BarChart3,
   Swords,
@@ -21,6 +19,7 @@ import {
 import { useAssessIdea } from '../hooks/useAssessIdea';
 import { getUsageCount, hasReachedFreeLimit, isPremium, setPremium } from '../lib/usage';
 import { FREE_ASSESSMENT_LIMIT } from '../lib/constants';
+import PageLayout from '../components/PageLayout';
 import DimensionCard from '../components/assess/DimensionCard';
 import MutationCard from '../components/assess/MutationCard';
 import PaywallModal from '../components/assess/PaywallModal';
@@ -125,11 +124,9 @@ export default function AssessPage() {
   // Transition to results after all steps animate + API done
   useEffect(() => {
     if (!apiDone || phase !== 'loading') return;
-    // Ensure we've shown at least a few steps
     const minDelay = Math.max(0, (LOADING_STEPS.length - activeStep) * 400);
     const timeout = setTimeout(() => {
       setActiveStep(LOADING_STEPS.length);
-      // Brief pause on the final "done" state
       setTimeout(() => {
         if (error) {
           setPhase('input');
@@ -183,13 +180,21 @@ export default function AssessPage() {
     ? compositeScore(assessment.demand.score, assessment.competition.score, assessment.shippability.score)
     : 0;
 
+  const usageAction = (
+    <span className="text-xs text-gray-400">
+      {premium
+        ? 'Unlimited assessments'
+        : remaining > 0
+          ? `${remaining} free assessment${remaining === 1 ? '' : 's'} remaining`
+          : 'Free assessments used'}
+    </span>
+  );
+
   // ===================== STEP 1: INPUT =====================
   if (phase === 'input') {
     return (
-      <div className="min-h-screen bg-white">
-        <Nav navigate={navigate} remaining={remaining} premium={premium} />
-
-        <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+      <PageLayout back="/" width="narrow" actions={usageAction}>
+        <div className="py-8 space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold">Assess Your Idea</h1>
             <p className="text-gray-500">Drop in your concept and we'll give you an honest score.</p>
@@ -256,7 +261,7 @@ export default function AssessPage() {
         </div>
 
         <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
-      </div>
+      </PageLayout>
     );
   }
 
@@ -265,13 +270,11 @@ export default function AssessPage() {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
         <div className="max-w-sm w-full space-y-8">
-          {/* Idea recap */}
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-400 uppercase tracking-wider font-medium">Assessing</p>
             <p className="text-lg text-gray-900 font-semibold leading-snug">{concept}</p>
           </div>
 
-          {/* Steps */}
           <div className="space-y-3">
             {LOADING_STEPS.map((step, i) => {
               const Icon = step.icon;
@@ -321,7 +324,6 @@ export default function AssessPage() {
             })}
           </div>
 
-          {/* Progress bar */}
           <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
             <div
               className="h-1 rounded-full bg-gradient-to-r from-orange-400 to-pink-400 transition-all duration-700 ease-out"
@@ -337,172 +339,98 @@ export default function AssessPage() {
   if (!assessment) return null;
 
   return (
-    <div className="min-h-screen bg-white">
-      <Nav navigate={navigate} remaining={remaining} premium={premium} />
-
-      <div className="w-[min(80%,1200px)] mx-auto pb-12">
-        {/* Compact hero — score + idea side by side */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-50 via-white to-pink-50 border border-gray-100 p-6 mb-6">
-          <div className="flex items-center gap-8">
-            {/* Score */}
-            <div className="text-center shrink-0">
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Launchability
-              </p>
-              <div className="flex items-baseline gap-0.5">
-                <span className={`text-5xl font-black bg-gradient-to-r ${verdictGradient(score)} bg-clip-text text-transparent`}>
-                  {score}
-                </span>
-                <span className="text-lg font-bold text-gray-300">/10</span>
-              </div>
-              <div className="mt-1 flex items-center justify-center gap-1">
-                <Zap className={`h-3 w-3 ${score >= 7.5 ? 'text-green-500' : score >= 5.5 ? 'text-orange-400' : 'text-red-400'}`} />
-                <span className="text-xs font-semibold text-gray-500">
-                  {verdictLabel(score)}
-                </span>
-              </div>
+    <PageLayout back="/" width="wide" actions={usageAction}>
+      {/* Compact hero — score + idea side by side */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-50 via-white to-pink-50 border border-gray-100 p-6 mb-6">
+        <div className="flex items-center gap-8">
+          <div className="text-center shrink-0">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+              Launchability
+            </p>
+            <div className="flex items-baseline gap-0.5">
+              <span className={`text-5xl font-black bg-gradient-to-r ${verdictGradient(score)} bg-clip-text text-transparent`}>
+                {score}
+              </span>
+              <span className="text-lg font-bold text-gray-300">/10</span>
             </div>
-            {/* Divider */}
-            <div className="w-px h-16 bg-gray-200 shrink-0" />
-            {/* Idea + verdict */}
-            <div className="min-w-0">
-              <p className="text-sm text-gray-900 font-medium mb-1">{concept}</p>
-              <p className="text-sm text-gray-500 leading-relaxed">{assessment.verdict}</p>
-              {assessment.ai_wrapper_flag ? (
-                <div className="flex items-center gap-1.5 mt-2">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                  <span className="text-xs text-amber-600 font-medium">
-                    {assessment.ai_wrapper_explanation ?? 'AI wrapper risk — consider the mutations below to differentiate.'}
-                  </span>
-                </div>
-              ) : null}
+            <div className="mt-1 flex items-center justify-center gap-1">
+              <Zap className={`h-3 w-3 ${score >= 7.5 ? 'text-green-500' : score >= 5.5 ? 'text-orange-400' : 'text-red-400'}`} />
+              <span className="text-xs font-semibold text-gray-500">
+                {verdictLabel(score)}
+              </span>
             </div>
-            {/* Back link */}
-            <button
-              onClick={handleStartOver}
-              className="shrink-0 ml-auto text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors self-start"
-            >
-              &larr; New idea
-            </button>
           </div>
-        </div>
-
-        {/* Dimension cards — 3 cols */}
-        <div className="grid gap-4 grid-cols-3 mb-6">
-          <DimensionCard
-            label="Demand"
-            dimension={assessment.demand}
-            icon={<TrendingUp className="h-4 w-4" />}
-            color="#22c55e"
-            delay={200}
-          />
-          <DimensionCard
-            label="Competition"
-            dimension={assessment.competition}
-            icon={<Shield className="h-4 w-4" />}
-            color="#f59e0b"
-            delay={400}
-          />
-          <DimensionCard
-            label="Shippability"
-            dimension={assessment.shippability}
-            icon={<Wrench className="h-4 w-4" />}
-            color="#fb923c"
-            delay={600}
-          />
-        </div>
-
-        {/* Mutations + Build Prompt — 2 cols */}
-        <div className="grid gap-6 grid-cols-5">
-          {/* Mutations — 2/5 */}
-          <section className="col-span-2 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">
-                Make It Better
-              </h3>
-            </div>
-            <div className="grid gap-2">
-              {assessment.mutations.map((m, i) => (
-                <MutationCard
-                  key={i}
-                  mutation={m}
-                  selected={selectedMutation === i}
-                  onSelect={() => setSelectedMutation(selectedMutation === i ? null : i)}
-                />
-              ))}
-            </div>
-            {selectedMutation !== null ? (
-              <button
-                onClick={handleEnhance}
-                className="w-full rounded-xl bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 px-3 py-2.5 text-sm font-bold text-orange-600 hover:from-orange-100 hover:to-pink-100 transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                Re-assess with this mutation
-              </button>
+          <div className="w-px h-16 bg-gray-200 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm text-gray-900 font-medium mb-1">{concept}</p>
+            <p className="text-sm text-gray-500 leading-relaxed">{assessment.verdict}</p>
+            {assessment.ai_wrapper_flag ? (
+              <div className="flex items-center gap-1.5 mt-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <span className="text-xs text-amber-600 font-medium">
+                  {assessment.ai_wrapper_explanation ?? 'AI wrapper risk — consider the mutations below to differentiate.'}
+                </span>
+              </div>
             ) : null}
-          </section>
+          </div>
+          <button
+            onClick={handleStartOver}
+            className="shrink-0 ml-auto text-xs text-gray-400 hover:text-gray-600 cursor-pointer transition-colors self-start"
+          >
+            &larr; New idea
+          </button>
+        </div>
+      </div>
 
-          {/* Refine CTA — 3/5 */}
-          <div className="col-span-3 flex flex-col justify-center">
-            <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-pink-50 p-8 text-center space-y-4">
-              <h3 className="text-lg font-bold text-gray-900">Ready to refine?</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                We'll generate a target persona and feature set based on your assessment.
-                You can accept, discard, or add your own features before we generate your build prompt.
-              </p>
-              <button
-                onClick={() =>
-                  navigate('/refine', {
-                    state: { concept, audience, assessment },
-                  })
-                }
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-400 to-pink-400 px-6 py-3 text-sm font-semibold text-white hover:from-orange-500 hover:to-pink-500 transition-all cursor-pointer shadow-sm"
-              >
-                Refine & Build
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
+      <div className="grid gap-4 grid-cols-3 mb-6">
+        <DimensionCard label="Demand" dimension={assessment.demand} icon={<TrendingUp className="h-4 w-4" />} color="#22c55e" delay={200} />
+        <DimensionCard label="Competition" dimension={assessment.competition} icon={<Shield className="h-4 w-4" />} color="#f59e0b" delay={400} />
+        <DimensionCard label="Shippability" dimension={assessment.shippability} icon={<Wrench className="h-4 w-4" />} color="#fb923c" delay={600} />
+      </div>
+
+      <div className="grid gap-6 grid-cols-5">
+        <section className="col-span-2 space-y-3">
+          <h3 className="font-semibold text-sm text-gray-400 uppercase tracking-wide">Make It Better</h3>
+          <div className="grid gap-2">
+            {assessment.mutations.map((m, i) => (
+              <MutationCard
+                key={i}
+                mutation={m}
+                selected={selectedMutation === i}
+                onSelect={() => setSelectedMutation(selectedMutation === i ? null : i)}
+              />
+            ))}
+          </div>
+          {selectedMutation !== null ? (
+            <button
+              onClick={handleEnhance}
+              className="w-full rounded-xl bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 px-3 py-2.5 text-sm font-bold text-orange-600 hover:from-orange-100 hover:to-pink-100 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Re-assess with this mutation
+            </button>
+          ) : null}
+        </section>
+
+        <div className="col-span-3 flex flex-col justify-center">
+          <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-pink-50 p-8 text-center space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">Ready to refine?</h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              We'll generate a target persona and feature set based on your assessment.
+              You can accept, discard, or add your own features before we generate your build prompt.
+            </p>
+            <button
+              onClick={() => navigate('/refine', { state: { concept, audience, assessment } })}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-400 to-pink-400 px-6 py-3 text-sm font-semibold text-white hover:from-orange-500 hover:to-pink-500 transition-all cursor-pointer shadow-sm"
+            >
+              Refine & Build
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
 
       <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
-    </div>
-  );
-}
-
-// ---------- shared nav ----------
-
-function Nav({
-  navigate,
-  remaining,
-  premium,
-}: {
-  navigate: ReturnType<typeof useNavigate>;
-  remaining: number;
-  premium: boolean;
-}) {
-  return (
-    <nav className="flex items-center gap-3 px-6 py-4 max-w-6xl mx-auto">
-      <button
-        onClick={() => navigate('/')}
-        className="rounded-lg p-2 hover:bg-gray-100 transition-colors cursor-pointer"
-      >
-        <ArrowLeft className="h-4 w-4 text-gray-500" />
-      </button>
-      <div className="flex items-center gap-2">
-        <div className="rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1.5">
-          <Rocket className="h-3.5 w-3.5 text-white" />
-        </div>
-        <span className="font-bold">Launchable</span>
-      </div>
-      <div className="ml-auto text-xs text-gray-400">
-        {premium
-          ? 'Unlimited assessments'
-          : remaining > 0
-            ? `${remaining} free assessment${remaining === 1 ? '' : 's'} remaining`
-            : 'Free assessments used'}
-      </div>
-    </nav>
+    </PageLayout>
   );
 }
