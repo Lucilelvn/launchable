@@ -24,9 +24,6 @@ export default function LandingPage() {
               </span>
             </button>
           ) : null}
-          <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">
-            Login
-          </button>
           <button
             onClick={() => navigate('/assess')}
             className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
