@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { getAnthropicClient } from '../lib/claude';
 import { ASSESS_SYSTEM_PROMPT } from '../lib/prompts';
 import { incrementUsage } from '../lib/usage';
+import { IS_MOCK, mockAssess } from '../lib/mock';
 import type { Assessment, IdeaInput } from '../types';
 
 export function useAssessIdea() {
@@ -14,12 +15,19 @@ export function useAssessIdea() {
     setError(null);
     setAssessment(null);
 
-    const parts = [`Idea: ${input.concept}`];
-    if (input.audience) parts.push(`Target audience: ${input.audience}`);
-    if (input.timeline) parts.push(`Timeline: ${input.timeline}`);
-    const userMessage = parts.join('\n');
-
     try {
+      if (IS_MOCK) {
+        const parsed = await mockAssess();
+        setAssessment(parsed);
+        incrementUsage();
+        return;
+      }
+
+      const parts = [`Idea: ${input.concept}`];
+      if (input.audience) parts.push(`Target audience: ${input.audience}`);
+      if (input.timeline) parts.push(`Timeline: ${input.timeline}`);
+      const userMessage = parts.join('\n');
+
       const client = getAnthropicClient();
       const response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
@@ -29,12 +37,10 @@ export function useAssessIdea() {
         messages: [{ role: 'user', content: userMessage }],
       });
 
-      // Find the last text block (after web search tool use)
       const textBlocks = response.content.filter((b) => b.type === 'text');
       const lastText = textBlocks[textBlocks.length - 1];
       const text = lastText && 'text' in lastText ? lastText.text : '';
 
-      // Extract JSON from the response (may be wrapped in markdown fences)
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('No valid JSON found in response');

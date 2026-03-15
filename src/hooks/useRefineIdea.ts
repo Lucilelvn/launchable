@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getAnthropicClient } from '../lib/claude';
 import { REFINE_SYSTEM_PROMPT } from '../lib/prompts';
+import { IS_MOCK, mockRefine } from '../lib/mock';
 import type { Assessment, Refinement } from '../types';
 
 export function useRefineIdea() {
@@ -12,16 +13,22 @@ export function useRefineIdea() {
     setIsLoading(true);
     setError(null);
 
-    const parts = [
-      `Idea: ${concept}`,
-      `Verdict: ${assessment.verdict}`,
-      `Demand: ${assessment.demand.score}/10 — ${assessment.demand.summary}`,
-      `Competition: ${assessment.competition.score}/10 — ${assessment.competition.summary}`,
-      `Shippability: ${assessment.shippability.score}/10 — ${assessment.shippability.summary}`,
-    ];
-    if (audience) parts.push(`Target audience: ${audience}`);
-
     try {
+      if (IS_MOCK) {
+        const parsed = await mockRefine();
+        setRefinement(parsed);
+        return;
+      }
+
+      const parts = [
+        `Idea: ${concept}`,
+        `Verdict: ${assessment.verdict}`,
+        `Demand: ${assessment.demand.score}/10 — ${assessment.demand.summary}`,
+        `Competition: ${assessment.competition.score}/10 — ${assessment.competition.summary}`,
+        `Shippability: ${assessment.shippability.score}/10 — ${assessment.shippability.summary}`,
+      ];
+      if (audience) parts.push(`Target audience: ${audience}`);
+
       const client = getAnthropicClient();
       const response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
@@ -36,7 +43,6 @@ export function useRefineIdea() {
       if (!jsonMatch) throw new Error('No valid JSON found in response');
 
       const parsed = JSON.parse(jsonMatch[0]) as Refinement;
-      // Mark all features as accepted by default
       parsed.features = parsed.features.map((f) => ({ ...f, accepted: true }));
       setRefinement(parsed);
     } catch (err) {
