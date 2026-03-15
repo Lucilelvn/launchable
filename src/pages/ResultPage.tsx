@@ -30,12 +30,7 @@ interface LegacyResultState {
   assessment: { demand: number; competition: number; shippability: number; summary: string };
 }
 
-const TOOL_URLS: Record<string, string> = {
-  'claude-code': 'https://claude.ai',
-  lovable: 'https://lovable.dev',
-  bolt: 'https://bolt.new',
-  replit: 'https://replit.com',
-};
+const OPEN_IN_TOOLS = ['claude-code', 'codex', 'lovable'] as const;
 
 export default function ResultPage() {
   const location = useLocation();
@@ -49,6 +44,7 @@ export default function ResultPage() {
   const started = useRef(false);
 
   const isRefined = state !== null && 'persona' in state;
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state || started.current) return;
@@ -129,9 +125,6 @@ export default function ResultPage() {
   }
 
   const refined = state as RefinedResultState;
-  const toolKey = buildPrompt?.tool as keyof typeof BUILD_TOOLS | undefined;
-  const tool = toolKey ? BUILD_TOOLS[toolKey] : null;
-  const toolUrl = toolKey ? TOOL_URLS[toolKey] : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -218,14 +211,6 @@ export default function ResultPage() {
                       <h3 className="font-semibold text-gray-900">Ready to paste</h3>
                       <p className="text-xs text-gray-500">{buildPrompt.reasoning}</p>
                     </div>
-                    {tool ? (
-                      <span
-                        className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shrink-0"
-                        style={{ backgroundColor: tool.color }}
-                      >
-                        {tool.name}
-                      </span>
-                    ) : null}
                   </div>
 
                   <div className="relative">
@@ -251,17 +236,48 @@ export default function ResultPage() {
                   </div>
                 </div>
 
-                {toolUrl ? (
-                  <a
-                    href={toolUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center justify-center gap-3 w-full rounded-2xl bg-gradient-to-r from-orange-400 to-pink-400 px-6 py-4 text-base font-bold text-white hover:from-orange-500 hover:to-pink-500 transition-all shadow-md shadow-orange-200/50 hover:shadow-orange-300/50 hover:scale-[1.01]"
-                  >
-                    Open in {tool?.name ?? buildPrompt.tool}
-                    <ExternalLink className="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
-                  </a>
-                ) : null}
+                {/* Open in tool selector */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Open in</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {OPEN_IN_TOOLS.map((key) => {
+                      const t = BUILD_TOOLS[key];
+                      const isSelected = selectedTool === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedTool(isSelected ? null : key)}
+                          className={`rounded-xl border-2 p-3 text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-current shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          style={isSelected ? { borderColor: t.color } : undefined}
+                        >
+                          <span
+                            className="text-sm font-bold"
+                            style={{ color: isSelected ? t.color : '#374151' }}
+                          >
+                            {t.name}
+                          </span>
+                          <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{t.description}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedTool ? (
+                    <a
+                      href={BUILD_TOOLS[selectedTool as keyof typeof BUILD_TOOLS].url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center justify-center gap-3 w-full rounded-2xl px-6 py-4 text-base font-bold text-white transition-all shadow-md hover:scale-[1.01]"
+                      style={{ backgroundColor: BUILD_TOOLS[selectedTool as keyof typeof BUILD_TOOLS].color }}
+                    >
+                      Open in {BUILD_TOOLS[selectedTool as keyof typeof BUILD_TOOLS].name}
+                      <ExternalLink className="h-5 w-5 opacity-70 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  ) : null}
+                </div>
               </>
             ) : null}
           </div>
