@@ -100,13 +100,17 @@ Respond with ONLY valid JSON (no markdown fences, no extra text):
       "id": "f1",
       "name": "Short feature name",
       "description": "One sentence explaining what this feature does and why it matters",
-      "priority": "must-have"
+      "priority": "must-have",
+      "complexity": "low",
+      "user_appetite": "One sentence explaining why users want this — what frustration does it solve or what delight does it create?"
     },
     {
       "id": "f2",
       "name": "Another feature",
       "description": "One sentence explaining what this feature does",
-      "priority": "nice-to-have"
+      "priority": "nice-to-have",
+      "complexity": "high",
+      "user_appetite": "One sentence on user demand signal"
     }
   ]
 }
@@ -119,7 +123,17 @@ RULES:
 - The persona should feel like a real person, not a marketing segment
 - Pain points should be specific frustrations, not generic problems
 - If the user provided a target audience, use that to inform the persona
-- Order features by priority (must-haves first)`;
+- Order features by priority (must-haves first)
+
+COMPLEXITY levels:
+- "low": Can be built in under an hour with an AI coding tool. Simple CRUD, static UI, basic forms
+- "medium": A few hours of work. Requires some integration, state management, or non-trivial logic
+- "high": Significant effort. Needs external APIs, complex algorithms, real-time features, or auth flows
+
+USER APPETITE:
+- For each feature, explain WHY users want it — reference the persona's pain points
+- Be specific: "Freelancers forget to follow up on invoices, costing them an average of 15% in lost revenue" not "Users want reminders"
+- This helps the user decide whether the feature is worth the complexity cost`;
 
 export const BUILD_PROMPT_SYSTEM = `You are Launchable's build prompt generator. Given an idea and a recommended tool, generate a detailed, ready-to-paste prompt the user can use to start building.
 

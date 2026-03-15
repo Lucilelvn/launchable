@@ -71,6 +71,8 @@ export interface Feature {
   name: string;
   description: string;
   priority: 'must-have' | 'nice-to-have';
+  complexity: 'low' | 'medium' | 'high';
+  user_appetite: string;
   accepted: boolean;
 }
 
