@@ -71,7 +71,7 @@ export default function IdeasPage() {
 
   return (
     <PageLayout width="wide">
-      <div className="text-center space-y-2 mb-8">
+      <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold">{title}</h1>
         <p className="text-gray-500">
           {filtered.length === 0
@@ -118,6 +118,14 @@ export default function IdeasPage() {
   );
 }
 
+function condensedTitle(concept: string): string {
+  // Take first ~8 words, strip trailing punctuation
+  const words = concept.split(/\s+/).slice(0, 8);
+  let title = words.join(' ');
+  if (concept.split(/\s+/).length > 8) title += '...';
+  return title;
+}
+
 function IdeaCard({
   idea,
   expanded,
@@ -135,61 +143,81 @@ function IdeaCard({
   onToggleStar: () => void;
   onCopyPrompt: () => void;
 }) {
+  const title = idea.title ?? condensedTitle(idea.concept);
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition-all hover:shadow-md">
       {/* Header */}
       <button onClick={onToggle} className="w-full text-left p-5 cursor-pointer">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <p className="text-sm font-medium text-gray-900 leading-snug line-clamp-2">{idea.concept}</p>
-          <div className="shrink-0 text-right">
-            <span className={`text-xl font-black ${verdictColor(idea.score)}`}>{idea.score}</span>
-            <p className={`text-[10px] font-semibold ${verdictColor(idea.score)}`}>{verdictLabel(idea.score)}</p>
+        {/* Top row: score badge + star */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold ${
+              idea.score >= 7.5
+                ? 'bg-green-50 text-green-600'
+                : idea.score >= 5.5
+                  ? 'bg-orange-50 text-orange-500'
+                  : 'bg-red-50 text-red-500'
+            }`}>
+              {idea.score}
+              <span className="font-medium text-[10px]">/ 10</span>
+            </div>
+            <span className={`text-[10px] font-semibold ${verdictColor(idea.score)}`}>
+              {verdictLabel(idea.score)}
+            </span>
           </div>
+          {idea.starred ? <Star className="h-3.5 w-3.5 text-orange-400 fill-orange-400" /> : null}
         </div>
 
+        {/* Title + description */}
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">{title}</h3>
+        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-3">{idea.concept}</p>
+
         {/* Score bars */}
-        <div className="flex gap-3 text-[10px] text-gray-400 font-medium">
-          <div className="flex-1">
-            <div className="flex justify-between mb-0.5">
+        <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-400 font-medium">
+          <div>
+            <div className="flex justify-between mb-1">
               <span>Demand</span>
               <span className="text-gray-600">{idea.demand}</span>
             </div>
-            <div className="h-1 rounded-full bg-gray-100">
-              <div className="h-1 rounded-full bg-green-400" style={{ width: `${idea.demand * 10}%` }} />
+            <div className="h-1.5 rounded-full bg-gray-100">
+              <div className="h-1.5 rounded-full bg-green-400 transition-all" style={{ width: `${idea.demand * 10}%` }} />
             </div>
           </div>
-          <div className="flex-1">
-            <div className="flex justify-between mb-0.5">
+          <div>
+            <div className="flex justify-between mb-1">
               <span>Competition</span>
               <span className="text-gray-600">{idea.competition}</span>
             </div>
-            <div className="h-1 rounded-full bg-gray-100">
-              <div className="h-1 rounded-full bg-amber-400" style={{ width: `${idea.competition * 10}%` }} />
+            <div className="h-1.5 rounded-full bg-gray-100">
+              <div className="h-1.5 rounded-full bg-amber-400 transition-all" style={{ width: `${idea.competition * 10}%` }} />
             </div>
           </div>
-          <div className="flex-1">
-            <div className="flex justify-between mb-0.5">
-              <span>Ship</span>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span>Shippability</span>
               <span className="text-gray-600">{idea.shippability}</span>
             </div>
-            <div className="h-1 rounded-full bg-gray-100">
-              <div className="h-1 rounded-full bg-orange-400" style={{ width: `${idea.shippability * 10}%` }} />
+            <div className="h-1.5 rounded-full bg-gray-100">
+              <div className="h-1.5 rounded-full bg-orange-400 transition-all" style={{ width: `${idea.shippability * 10}%` }} />
             </div>
           </div>
         </div>
 
-        {/* Meta */}
-        <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-400">
+        {/* Meta row */}
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
           {idea.persona ? (
-            <span className="flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
               <User className="h-2.5 w-2.5" />
               {idea.persona.name}
             </span>
           ) : null}
           {idea.features ? (
-            <span>{idea.features.length} features</span>
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+              {idea.features.length} features
+            </span>
           ) : null}
-          <span className="ml-auto">{timeAgo(idea.savedAt)}</span>
+          <span className="ml-auto text-[10px] text-gray-300">{timeAgo(idea.savedAt)}</span>
         </div>
       </button>
 

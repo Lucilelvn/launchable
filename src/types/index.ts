@@ -89,6 +89,7 @@ export interface BuildPrompt {
 
 export interface SavedIdea {
   id: string;
+  title?: string;
   concept: string;
   audience?: string;
   score: number;

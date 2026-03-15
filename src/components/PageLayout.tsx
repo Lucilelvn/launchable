@@ -127,7 +127,7 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
         {/* Main nav */}
         <nav className="px-3 space-y-0.5">
           <SidebarLink icon={Home} label="Home" path="/" current={location.pathname} onClick={() => navigate('/')} />
-          <SidebarLink icon={Search} label="Search" path="/explore" current={location.pathname} onClick={() => navigate('/explore')} />
+          <SidebarLink icon={Search} label="Search" path="/search" current={location.pathname} onClick={() => navigate('/search')} />
           <SidebarLink icon={BookOpen} label="Resources" path="/resources" current={location.pathname} onClick={() => navigate('/resources')} />
         </nav>
 
@@ -199,7 +199,7 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
           </div>
         ) : null}
 
-        <div className={`${WIDTH_CLASS[width]} pb-12`}>
+        <div className="p-8">
           {children}
         </div>
       </main>
