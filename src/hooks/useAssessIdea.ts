@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getClient } from '../lib/anthropic';
+import { getClient } from '../lib/groq';
 import { ASSESS_SYSTEM_PROMPT } from '../lib/prompts';
 import { incrementUsage } from '../lib/usage';
 import type { Assessment, IdeaInput } from '../types';
