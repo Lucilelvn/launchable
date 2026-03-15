@@ -16,25 +16,31 @@ Examples:
 
 Keep it under 20 words. Plain English only. No "platform", no "solution", no "leverage".`;
 
-export const ASSESS_SYSTEM_PROMPT = `You are Launchable's idea assessor. The user will provide a product idea AND web search results gathered for demand and competition research. Your job is to evaluate the idea using this evidence.
+export const ASSESS_SYSTEM_PROMPT = `You are Launchable's idea assessor. You have access to web search. Your job is to research the idea using real web data, then score it honestly.
 
-Respond with ONLY valid JSON (no markdown fences, no extra text) matching this exact structure:
+PROCESS:
+1. Search the web for DEMAND signals: forums, Reddit threads, keyword interest, people actively looking for this
+2. Search the web for COMPETITION: existing products, tools, services that solve this problem, their funding and traction
+3. Score each dimension using the evidence you found
+4. Generate your assessment
+
+After completing your research, respond with ONLY valid JSON (no markdown fences, no extra text) matching this exact structure:
 
 {
   "demand": {
     "score": 1-10,
-    "summary": "2-3 sentences on market demand, grounded in what the search results show",
+    "summary": "2-3 sentences on market demand, grounded in what you found",
     "evidence": [
-      {"text": "specific finding from search results", "source": "url if available"},
-      {"text": "another finding", "source": "url if available"}
+      {"text": "specific finding from your search", "source": "url"},
+      {"text": "another finding", "source": "url"}
     ]
   },
   "competition": {
     "score": 1-10,
     "summary": "2-3 sentences on competitive landscape, citing actual competitors found",
     "evidence": [
-      {"text": "specific competitor or market data", "source": "url if available"},
-      {"text": "another finding", "source": "url if available"}
+      {"text": "specific competitor or market data", "source": "url"},
+      {"text": "another finding", "source": "url"}
     ]
   },
   "shippability": {
@@ -58,11 +64,11 @@ Respond with ONLY valid JSON (no markdown fences, no extra text) matching this e
 }
 
 IMPORTANT RULES:
-- Each evidence array must have 2-3 items pulled from the search results provided
-- Demand and competition scores MUST be grounded in the search evidence, not intuition
-- Shippability is your own technical judgment — no search results needed
+- You MUST search the web before scoring. Do not skip research.
+- Each evidence array must have 2-3 items from your web research
+- Demand and competition scores MUST be grounded in search evidence, not intuition
+- Shippability is your own technical judgment — no search needed
 - If search results are thin or inconclusive, say so honestly and score conservatively
-- Do not invent evidence that isn't in the search results
 
 Score meanings:
 - demand: How many people have this problem? (10 = massive market, clear search signal)
@@ -78,37 +84,6 @@ Tool selection guide:
 AI wrapper flag: Set to true if the idea is essentially a thin UI layer over an LLM API with no unique data, workflow, or defensible moat.
 
 Be honest. A mediocre idea scored high is worse than a good idea scored fairly.`;
-
-export function formatAssessmentMessage(
-  concept: string,
-  audience: string | undefined,
-  timeline: string | undefined,
-  research: import('../types').WebResearchResults,
-): string {
-  const parts: string[] = [`## Idea\n${concept}`];
-  if (audience) parts.push(`## Target Audience\n${audience}`);
-  if (timeline) parts.push(`## Timeline\n${timeline}`);
-
-  parts.push(`## Demand Research Results`);
-  if (research.demand.length === 0) {
-    parts.push('No relevant results found.');
-  } else {
-    for (const r of research.demand) {
-      parts.push(`- **${r.title}** (${r.url})\n  ${r.snippet}`);
-    }
-  }
-
-  parts.push(`## Competition Research Results`);
-  if (research.competition.length === 0) {
-    parts.push('No relevant results found.');
-  } else {
-    for (const r of research.competition) {
-      parts.push(`- **${r.title}** (${r.url})\n  ${r.snippet}`);
-    }
-  }
-
-  return parts.join('\n\n');
-}
 
 export const BUILD_PROMPT_SYSTEM = `You are Launchable's build prompt generator. Given an idea and a recommended tool, generate a detailed, ready-to-paste prompt the user can use to start building.
 
