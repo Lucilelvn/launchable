@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getAnthropicClient } from '../lib/claude';
 import { REFINE_SYSTEM_PROMPT } from '../lib/prompts';
+import { IS_MOCK, mockRefine } from '../lib/mock';
 import type { Assessment, Refinement } from '../types';
 
 export function useRefineIdea() {
@@ -22,6 +23,12 @@ export function useRefineIdea() {
     if (audience) parts.push(`Target audience: ${audience}`);
 
     try {
+      if (IS_MOCK) {
+        const parsed = await mockRefine();
+        setRefinement(parsed);
+        return;
+      }
+
       const client = getAnthropicClient();
       const response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',

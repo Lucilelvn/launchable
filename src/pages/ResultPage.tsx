@@ -14,6 +14,7 @@ import { getAnthropicClient } from '../lib/claude';
 import { BUILD_PROMPT_SYSTEM } from '../lib/prompts';
 import { BUILD_TOOLS } from '../lib/constants';
 import { saveIdea } from '../lib/ideas';
+import { IS_MOCK, mockBuildPrompt, mockGenerateTitle } from '../lib/mock';
 import PageLayout from '../components/PageLayout';
 import type { Assessment, Persona, Feature, BuildPrompt, SavedIdea } from '../types';
 
@@ -76,21 +77,27 @@ export default function ResultPage() {
     setLoading(true);
     setError(null);
 
-    const featureList = s.features
-      .map((f) => `- ${f.name}: ${f.description}${f.priority === 'must-have' ? ' [MUST-HAVE]' : ' [NICE-TO-HAVE]'}`)
-      .join('\n');
-
-    const userMessage = [
-      `Idea: ${s.concept}`,
-      s.audience ? `Audience: ${s.audience}` : null,
-      `\nTarget Persona: ${s.persona.name}`,
-      s.persona.description,
-      `Pain points: ${s.persona.pain_points.join('; ')}`,
-      `\nAccepted Features:\n${featureList}`,
-      `\nAssessment: Demand ${s.assessment.demand.score}/10, Competition ${s.assessment.competition.score}/10, Shippability ${s.assessment.shippability.score}/10`,
-    ].filter(Boolean).join('\n');
-
     try {
+      if (IS_MOCK) {
+        const parsed = await mockBuildPrompt();
+        setBuildPrompt(parsed);
+        return;
+      }
+
+      const featureList = s.features
+        .map((f) => `- ${f.name}: ${f.description}${f.priority === 'must-have' ? ' [MUST-HAVE]' : ' [NICE-TO-HAVE]'}`)
+        .join('\n');
+
+      const userMessage = [
+        `Idea: ${s.concept}`,
+        s.audience ? `Audience: ${s.audience}` : null,
+        `\nTarget Persona: ${s.persona.name}`,
+        s.persona.description,
+        `Pain points: ${s.persona.pain_points.join('; ')}`,
+        `\nAccepted Features:\n${featureList}`,
+        `\nAssessment: Demand ${s.assessment.demand.score}/10, Competition ${s.assessment.competition.score}/10, Shippability ${s.assessment.shippability.score}/10`,
+      ].filter(Boolean).join('\n');
+
       const client = getAnthropicClient();
       const response = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
@@ -130,6 +137,7 @@ export default function ResultPage() {
   const refined = state as RefinedResultState;
 
   async function generateTitle(concept: string): Promise<string> {
+    if (IS_MOCK) return mockGenerateTitle(concept);
     try {
       const client = getAnthropicClient();
       const response = await client.messages.create({

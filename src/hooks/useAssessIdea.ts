@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { getAnthropicClient } from '../lib/claude';
 import { ASSESS_SYSTEM_PROMPT } from '../lib/prompts';
 import { incrementUsage } from '../lib/usage';
+import { IS_MOCK, mockAssess } from '../lib/mock';
 import type { Assessment, IdeaInput } from '../types';
 
 export function useAssessIdea() {
@@ -20,6 +21,13 @@ export function useAssessIdea() {
     const userMessage = parts.join('\n');
 
     try {
+      if (IS_MOCK) {
+        const parsed = await mockAssess();
+        setAssessment(parsed);
+        incrementUsage();
+        return;
+      }
+
       const client = getAnthropicClient();
       const response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
