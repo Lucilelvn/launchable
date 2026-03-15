@@ -1,36 +1,19 @@
 import { useNavigate } from 'react-router-dom';
-import { Bookmark } from 'lucide-react';
-import { getSavedIdeas } from '../lib/ideas';
 import PageLayout from '../components/PageLayout';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const savedCount = getSavedIdeas().length;
 
   return (
     <PageLayout
       width="medium"
       actions={
-        <>
-          {savedCount > 0 ? (
-            <button
-              onClick={() => navigate('/ideas')}
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-            >
-              <Bookmark className="h-3.5 w-3.5" />
-              My Ideas
-              <span className="bg-gray-100 text-gray-500 text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
-                {savedCount}
-              </span>
-            </button>
-          ) : null}
-          <button
-            onClick={() => navigate('/assess')}
-            className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
-          >
-            Get Started
-          </button>
-        </>
+        <button
+          onClick={() => navigate('/assess')}
+          className="text-sm font-medium bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
+        >
+          Get Started
+        </button>
       }
     >
       {/* Hero */}

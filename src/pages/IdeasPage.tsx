@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Trash2,
   User,
   Copy,
   Check,
   Lightbulb,
+  Star,
 } from 'lucide-react';
-import { getSavedIdeas, deleteIdea } from '../lib/ideas';
+import { getSavedIdeas, deleteIdea, toggleStar } from '../lib/ideas';
 import PageLayout from '../components/PageLayout';
 import type { SavedIdea } from '../types';
 
@@ -36,13 +37,24 @@ function timeAgo(iso: string): string {
 
 export default function IdeasPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isStarredView = location.pathname === '/ideas/starred';
   const [ideas, setIdeas] = useState<SavedIdea[]>(getSavedIdeas);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const filtered = isStarredView ? ideas.filter((i) => i.starred) : ideas;
+
   function handleDelete(id: string) {
     deleteIdea(id);
     setIdeas((prev) => prev.filter((i) => i.id !== id));
+  }
+
+  function handleToggleStar(id: string) {
+    toggleStar(id);
+    setIdeas((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, starred: !i.starred } : i)),
+    );
   }
 
   async function handleCopyPrompt(idea: SavedIdea) {
@@ -52,44 +64,56 @@ export default function IdeasPage() {
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  return (
-    <PageLayout back="/" width="wide">
-      <div className="text-center space-y-2 mb-8">
-          <h1 className="text-3xl font-bold">My Ideas</h1>
-          <p className="text-gray-500">
-            {ideas.length === 0
-              ? 'No saved ideas yet. Assess an idea and save it to see it here.'
-              : `${ideas.length} saved idea${ideas.length === 1 ? '' : 's'}`}
-          </p>
-        </div>
+  const title = isStarredView ? 'Starred Ideas' : 'All Ideas';
+  const emptyMessage = isStarredView
+    ? 'No starred ideas yet. Star an idea to see it here.'
+    : 'No saved ideas yet. Assess an idea and save it to see it here.';
 
-        {ideas.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-6">
-            <div className="rounded-full bg-gray-100 p-6">
+  return (
+    <PageLayout width="wide">
+      <div className="text-center space-y-2 mb-8">
+        <h1 className="text-3xl font-bold">{title}</h1>
+        <p className="text-gray-500">
+          {filtered.length === 0
+            ? emptyMessage
+            : `${filtered.length} idea${filtered.length === 1 ? '' : 's'}`}
+        </p>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-6">
+          <div className="rounded-full bg-gray-100 p-6">
+            {isStarredView ? (
+              <Star className="h-10 w-10 text-gray-300" />
+            ) : (
               <Lightbulb className="h-10 w-10 text-gray-300" />
-            </div>
+            )}
+          </div>
+          {isStarredView ? null : (
             <button
               onClick={() => navigate('/assess')}
               className="rounded-xl bg-gradient-to-r from-orange-400 to-pink-400 px-6 py-3 text-sm font-semibold text-white hover:from-orange-500 hover:to-pink-500 transition-all cursor-pointer shadow-sm"
             >
               Assess your first idea
             </button>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {ideas.map((idea) => (
-              <IdeaCard
-                key={idea.id}
-                idea={idea}
-                expanded={expandedId === idea.id}
-                copied={copiedId === idea.id}
-                onToggle={() => setExpandedId(expandedId === idea.id ? null : idea.id)}
-                onDelete={() => handleDelete(idea.id)}
-                onCopyPrompt={() => handleCopyPrompt(idea)}
-              />
-            ))}
-          </div>
-        )}
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((idea) => (
+            <IdeaCard
+              key={idea.id}
+              idea={idea}
+              expanded={expandedId === idea.id}
+              copied={copiedId === idea.id}
+              onToggle={() => setExpandedId(expandedId === idea.id ? null : idea.id)}
+              onDelete={() => handleDelete(idea.id)}
+              onToggleStar={() => handleToggleStar(idea.id)}
+              onCopyPrompt={() => handleCopyPrompt(idea)}
+            />
+          ))}
+        </div>
+      )}
     </PageLayout>
   );
 }
@@ -100,6 +124,7 @@ function IdeaCard({
   copied,
   onToggle,
   onDelete,
+  onToggleStar,
   onCopyPrompt,
 }: {
   idea: SavedIdea;
@@ -107,6 +132,7 @@ function IdeaCard({
   copied: boolean;
   onToggle: () => void;
   onDelete: () => void;
+  onToggleStar: () => void;
   onCopyPrompt: () => void;
 }) {
   return (
@@ -188,6 +214,17 @@ function IdeaCard({
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">
+            <button
+              onClick={onToggleStar}
+              className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                idea.starred
+                  ? 'border-orange-200 bg-orange-50 text-orange-500'
+                  : 'border-gray-200 text-gray-400 hover:bg-gray-50'
+              }`}
+            >
+              <Star className={`h-3 w-3 ${idea.starred ? 'fill-orange-400' : ''}`} />
+              {idea.starred ? 'Starred' : 'Star'}
+            </button>
             {idea.buildPrompt ? (
               <button
                 onClick={onCopyPrompt}
