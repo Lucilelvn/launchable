@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
+  ArrowRight,
   TrendingUp,
   Shield,
   Wrench,
@@ -22,7 +23,6 @@ import { getUsageCount, hasReachedFreeLimit, isPremium, setPremium } from '../li
 import { FREE_ASSESSMENT_LIMIT } from '../lib/constants';
 import DimensionCard from '../components/assess/DimensionCard';
 import MutationCard from '../components/assess/MutationCard';
-import BuildPromptSection from '../components/assess/BuildPromptSection';
 import PaywallModal from '../components/assess/PaywallModal';
 
 // ---------- loading steps ----------
@@ -442,12 +442,26 @@ export default function AssessPage() {
             ) : null}
           </section>
 
-          {/* Build Prompt — 3/5 */}
-          <div className="col-span-3">
-            <BuildPromptSection
-              buildTool={assessment.build_tool}
-              buildPrompt={assessment.build_prompt}
-            />
+          {/* Refine CTA — 3/5 */}
+          <div className="col-span-3 flex flex-col justify-center">
+            <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-pink-50 p-8 text-center space-y-4">
+              <h3 className="text-lg font-bold text-gray-900">Ready to refine?</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                We'll generate a target persona and feature set based on your assessment.
+                You can accept, discard, or add your own features before we generate your build prompt.
+              </p>
+              <button
+                onClick={() =>
+                  navigate('/refine', {
+                    state: { concept, audience, assessment },
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-400 to-pink-400 px-6 py-3 text-sm font-semibold text-white hover:from-orange-500 hover:to-pink-500 transition-all cursor-pointer shadow-sm"
+              >
+                Refine & Build
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -85,6 +85,56 @@ AI wrapper flag: Set to true if the idea is essentially a thin UI layer over an 
 
 Be honest. A mediocre idea scored high is worse than a good idea scored fairly.`;
 
+export const REFINE_SYSTEM_PROMPT = `You are Launchable's idea refinement engine. Given a product idea and its assessment scores, generate a target persona and a prioritized feature set.
+
+Respond with ONLY valid JSON (no markdown fences, no extra text):
+
+{
+  "persona": {
+    "name": "A short persona label, e.g. 'Freelance Designer'",
+    "description": "2-3 sentences describing who this person is, their context, and why they need this product",
+    "pain_points": ["specific pain point 1", "specific pain point 2", "specific pain point 3"]
+  },
+  "features": [
+    {
+      "id": "f1",
+      "name": "Short feature name",
+      "description": "One sentence explaining what this feature does and why it matters",
+      "priority": "must-have",
+      "complexity": "low",
+      "user_appetite": "One sentence explaining why users want this — what frustration does it solve or what delight does it create?"
+    },
+    {
+      "id": "f2",
+      "name": "Another feature",
+      "description": "One sentence explaining what this feature does",
+      "priority": "nice-to-have",
+      "complexity": "high",
+      "user_appetite": "One sentence on user demand signal"
+    }
+  ]
+}
+
+RULES:
+- Generate 5-8 features total
+- 3-4 should be "must-have" (core functionality needed for MVP)
+- 2-4 should be "nice-to-have" (valuable but can ship without)
+- Features should be specific and actionable, not vague ("Email digest of weekly stats" not "Analytics")
+- The persona should feel like a real person, not a marketing segment
+- Pain points should be specific frustrations, not generic problems
+- If the user provided a target audience, use that to inform the persona
+- Order features by priority (must-haves first)
+
+COMPLEXITY levels:
+- "low": Can be built in under an hour with an AI coding tool. Simple CRUD, static UI, basic forms
+- "medium": A few hours of work. Requires some integration, state management, or non-trivial logic
+- "high": Significant effort. Needs external APIs, complex algorithms, real-time features, or auth flows
+
+USER APPETITE:
+- For each feature, explain WHY users want it — reference the persona's pain points
+- Be specific: "Freelancers forget to follow up on invoices, costing them an average of 15% in lost revenue" not "Users want reminders"
+- This helps the user decide whether the feature is worth the complexity cost`;
+
 export const BUILD_PROMPT_SYSTEM = `You are Launchable's build prompt generator. Given an idea and a recommended tool, generate a detailed, ready-to-paste prompt the user can use to start building.
 
 Respond with ONLY a JSON block (no markdown fences, no extra text):
