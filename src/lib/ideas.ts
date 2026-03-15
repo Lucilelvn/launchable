@@ -27,3 +27,10 @@ export function deleteIdea(id: string): void {
   const ideas = getSavedIdeas().filter((i) => i.id !== id);
   localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(ideas));
 }
+
+export function toggleStar(id: string): void {
+  const ideas = getSavedIdeas().map((i) =>
+    i.id === id ? { ...i, starred: !i.starred } : i,
+  );
+  localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(ideas));
+}

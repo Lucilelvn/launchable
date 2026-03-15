@@ -100,6 +100,7 @@ export interface SavedIdea {
   features?: Feature[];
   buildPrompt?: string;
   buildTool?: string;
+  starred?: boolean;
   savedAt: string;
 }
 

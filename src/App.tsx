@@ -16,6 +16,7 @@ export default function App() {
         <Route path="/refine" element={<RefinePage />} />
         <Route path="/result" element={<ResultPage />} />
         <Route path="/ideas" element={<IdeasPage />} />
+        <Route path="/ideas/starred" element={<IdeasPage />} />
       </Routes>
     </BrowserRouter>
   );
