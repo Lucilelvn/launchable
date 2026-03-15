@@ -10,11 +10,13 @@ import {
   Rocket,
   User,
   Star,
+  Bookmark,
 } from 'lucide-react';
 import { getAnthropicClient } from '../lib/claude';
 import { BUILD_PROMPT_SYSTEM } from '../lib/prompts';
 import { BUILD_TOOLS } from '../lib/constants';
-import type { Assessment, Persona, Feature, BuildPrompt } from '../types';
+import { saveIdea } from '../lib/ideas';
+import type { Assessment, Persona, Feature, BuildPrompt, SavedIdea } from '../types';
 
 interface RefinedResultState {
   concept: string;
@@ -45,6 +47,7 @@ export default function ResultPage() {
 
   const isRefined = state !== null && 'persona' in state;
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!state || started.current) return;
@@ -126,6 +129,33 @@ export default function ResultPage() {
 
   const refined = state as RefinedResultState;
 
+  function handleSave() {
+    if (!buildPrompt) return;
+    const score = Math.round(
+      (refined.assessment.demand.score * 0.4 +
+        (10 - refined.assessment.competition.score) * 0.25 +
+        refined.assessment.shippability.score * 0.35) * 10,
+    ) / 10;
+
+    const idea: SavedIdea = {
+      id: `idea-${Date.now()}`,
+      concept: refined.concept,
+      audience: refined.audience,
+      score,
+      verdict: refined.assessment.verdict,
+      demand: refined.assessment.demand.score,
+      competition: refined.assessment.competition.score,
+      shippability: refined.assessment.shippability.score,
+      persona: refined.persona,
+      features: refined.features,
+      buildPrompt: buildPrompt.prompt,
+      buildTool: buildPrompt.tool,
+      savedAt: new Date().toISOString(),
+    };
+    saveIdea(idea);
+    setSaved(true);
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="flex items-center gap-3 px-6 py-4 max-w-6xl mx-auto">
@@ -141,6 +171,20 @@ export default function ResultPage() {
           </div>
           <span className="font-bold">Launchable</span>
         </div>
+        {buildPrompt ? (
+          <button
+            onClick={handleSave}
+            disabled={saved}
+            className={`ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+              saved
+                ? 'bg-green-50 text-green-600 border border-green-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+            }`}
+          >
+            {saved ? <Check className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
+            {saved ? 'Saved!' : 'Save idea'}
+          </button>
+        ) : null}
       </nav>
 
       <div className="w-[min(90%,1200px)] mx-auto pb-12 space-y-6">

@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { Rocket } from 'lucide-react';
+import { Rocket, Bookmark } from 'lucide-react';
+import { getSavedIdeas } from '../lib/ideas';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const savedCount = getSavedIdeas().length;
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -15,6 +17,18 @@ export default function LandingPage() {
           <span className="font-bold text-lg">Launchable</span>
         </div>
         <div className="flex items-center gap-4">
+          {savedCount > 0 ? (
+            <button
+              onClick={() => navigate('/ideas')}
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+              My Ideas
+              <span className="bg-gray-100 text-gray-500 text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
+                {savedCount}
+              </span>
+            </button>
+          ) : null}
           <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors cursor-pointer">
             Login
           </button>
