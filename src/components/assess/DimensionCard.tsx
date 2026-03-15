@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { DimensionScore } from '../../types';
 
 interface DimensionCardProps {
@@ -11,6 +12,8 @@ interface DimensionCardProps {
 
 export default function DimensionCard({ label, dimension, icon, color, delay = 0 }: DimensionCardProps) {
   const [animated, setAnimated] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(false);
+  const hasEvidence = dimension.evidence && dimension.evidence.length > 0;
 
   useEffect(() => {
     const t = setTimeout(() => setAnimated(true), delay);
@@ -52,6 +55,37 @@ export default function DimensionCard({ label, dimension, icon, color, delay = 0
         {label}
       </div>
       <p className="text-xs text-gray-500 leading-relaxed">{dimension.summary}</p>
+      {hasEvidence ? (
+        <div className="w-full">
+          <button
+            onClick={() => setShowEvidence(!showEvidence)}
+            className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-gray-600 transition-colors cursor-pointer mx-auto"
+          >
+            <span>{showEvidence ? 'Hide' : 'Show'} evidence</span>
+            <ChevronDown className={`h-3 w-3 transition-transform ${showEvidence ? 'rotate-180' : ''}`} />
+          </button>
+          {showEvidence ? (
+            <ul className="mt-2 space-y-1.5 text-left">
+              {dimension.evidence.map((e, i) => (
+                <li key={i} className="text-[11px] text-gray-500 leading-relaxed">
+                  <span className="text-gray-300 mr-1">&bull;</span>
+                  {e.text}
+                  {e.source ? (
+                    <a
+                      href={e.source}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-1 text-orange-400 hover:text-orange-500 underline"
+                    >
+                      source
+                    </a>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

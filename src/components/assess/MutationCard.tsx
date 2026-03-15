@@ -41,6 +41,9 @@ export default function MutationCard({ mutation, selected, onSelect }: MutationC
             {config.label}
           </span>
           <p className="text-xs text-gray-700 mt-0.5 leading-relaxed">{mutation.idea}</p>
+          {mutation.score_indication ? (
+            <p className="text-[10px] text-gray-400 mt-1 italic">{mutation.score_indication}</p>
+          ) : null}
         </div>
       </div>
     </button>
