@@ -1,22 +1,17 @@
 import { useNavigate } from 'react-router-dom';
-import { Rocket, Bookmark } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { getSavedIdeas } from '../lib/ideas';
+import PageLayout from '../components/PageLayout';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const savedCount = getSavedIdeas().length;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1.5">
-            <Rocket className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-bold text-lg">Launchable</span>
-        </div>
-        <div className="flex items-center gap-4">
+    <PageLayout
+      width="medium"
+      actions={
+        <>
           {savedCount > 0 ? (
             <button
               onClick={() => navigate('/ideas')}
@@ -38,11 +33,11 @@ export default function LandingPage() {
           >
             Get Started
           </button>
-        </div>
-      </nav>
-
+        </>
+      }
+    >
       {/* Hero */}
-      <main className="max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
+      <div className="pt-20 pb-16 text-center">
         <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight">
           Go from feeling to{' '}
           <br className="hidden sm:block" />
@@ -87,7 +82,7 @@ export default function LandingPage() {
             </span>
           </button>
         </div>
-      </main>
-    </div>
+      </div>
+    </PageLayout>
   );
 }

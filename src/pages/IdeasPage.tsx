@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
-  Rocket,
   Trash2,
-  Zap,
   User,
   Copy,
   Check,
   Lightbulb,
 } from 'lucide-react';
 import { getSavedIdeas, deleteIdea } from '../lib/ideas';
+import PageLayout from '../components/PageLayout';
 import type { SavedIdea } from '../types';
 
 function verdictColor(score: number): string {
@@ -55,24 +53,8 @@ export default function IdeasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="flex items-center gap-3 px-6 py-4 max-w-6xl mx-auto">
-        <button
-          onClick={() => navigate('/')}
-          className="rounded-lg p-2 hover:bg-gray-100 transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="h-4 w-4 text-gray-500" />
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1.5">
-            <Rocket className="h-3.5 w-3.5 text-white" />
-          </div>
-          <span className="font-bold">Launchable</span>
-        </div>
-      </nav>
-
-      <div className="w-[min(90%,1200px)] mx-auto pb-12">
-        <div className="text-center space-y-2 mb-8">
+    <PageLayout back="/" width="wide">
+      <div className="text-center space-y-2 mb-8">
           <h1 className="text-3xl font-bold">My Ideas</h1>
           <p className="text-gray-500">
             {ideas.length === 0
@@ -108,8 +90,7 @@ export default function IdeasPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   );
 }
 

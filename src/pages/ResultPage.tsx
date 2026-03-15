@@ -1,13 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import {
-  ArrowLeft,
   Copy,
   Check,
   ExternalLink,
   Terminal,
   Loader2,
-  Rocket,
   User,
   Star,
   Bookmark,
@@ -16,6 +14,7 @@ import { getAnthropicClient } from '../lib/claude';
 import { BUILD_PROMPT_SYSTEM } from '../lib/prompts';
 import { BUILD_TOOLS } from '../lib/constants';
 import { saveIdea } from '../lib/ideas';
+import PageLayout from '../components/PageLayout';
 import type { Assessment, Persona, Feature, BuildPrompt, SavedIdea } from '../types';
 
 interface RefinedResultState {
@@ -156,38 +155,24 @@ export default function ResultPage() {
     setSaved(true);
   }
 
-  return (
-    <div className="min-h-screen bg-white">
-      <nav className="flex items-center gap-3 px-6 py-4 max-w-6xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="rounded-lg p-2 hover:bg-gray-100 transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="h-4 w-4 text-gray-500" />
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1.5">
-            <Rocket className="h-3.5 w-3.5 text-white" />
-          </div>
-          <span className="font-bold">Launchable</span>
-        </div>
-        {buildPrompt ? (
-          <button
-            onClick={handleSave}
-            disabled={saved}
-            className={`ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
-              saved
-                ? 'bg-green-50 text-green-600 border border-green-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
-            }`}
-          >
-            {saved ? <Check className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
-            {saved ? 'Saved!' : 'Save idea'}
-          </button>
-        ) : null}
-      </nav>
+  const saveAction = buildPrompt ? (
+    <button
+      onClick={handleSave}
+      disabled={saved}
+      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+        saved
+          ? 'bg-green-50 text-green-600 border border-green-200'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
+      }`}
+    >
+      {saved ? <Check className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
+      {saved ? 'Saved!' : 'Save idea'}
+    </button>
+  ) : null;
 
-      <div className="w-[min(90%,1200px)] mx-auto pb-12 space-y-6">
+  return (
+    <PageLayout back="history" width="wide" actions={saveAction}>
+      <div className="space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Your Build Prompt</h1>
           <p className="text-gray-500">Tailored to your persona and selected features. Copy and paste to start building.</p>
@@ -327,6 +312,6 @@ export default function ResultPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
