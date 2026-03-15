@@ -135,11 +135,18 @@ USER APPETITE:
 - Be specific: "Freelancers forget to follow up on invoices, costing them an average of 15% in lost revenue" not "Users want reminders"
 - This helps the user decide whether the feature is worth the complexity cost`;
 
-export const BUILD_PROMPT_SYSTEM = `You are Launchable's build prompt generator. Given an idea and a recommended tool, generate a detailed, ready-to-paste prompt the user can use to start building.
+export const BUILD_PROMPT_SYSTEM = `You are Launchable's build prompt generator. Given an idea, a target persona, and a curated feature list, generate a detailed, ready-to-paste prompt for an AI coding tool.
 
-Respond with ONLY a JSON block (no markdown fences, no extra text):
+Respond with ONLY valid JSON (no markdown fences, no extra text):
 
-{"tool":"claude-code"|"lovable"|"bolt"|"replit","reasoning":"1-2 sentences on why this tool is the best fit","prompt":"The full build prompt, ready to paste. Be specific about features, pages, tech stack, and user flows. Write it as instructions to the AI tool."}
+{"tool":"claude-code"|"lovable"|"bolt"|"replit","reasoning":"1-2 sentences on why this tool is the best fit","prompt":"The full build prompt, ready to paste into the AI coding tool."}
+
+The prompt MUST include:
+- What the app does (1-2 sentences, referencing the persona)
+- Core features — ONLY the features the user accepted, bulleted
+- Tech stack recommendation appropriate for the tool
+- Page/screen breakdown derived from the features
+- Key UX details tailored to the persona
 
 Tool selection guide:
 - claude-code: Complex apps, APIs, full-stack, anything needing backend logic
@@ -147,9 +154,4 @@ Tool selection guide:
 - bolt: Quick prototypes, simple web tools, single-page apps
 - replit: Learning projects, experiments, multiplayer/collaborative tools
 
-The prompt should be detailed enough that someone can paste it into the tool and get a working first version. Include:
-- What the app does (1-2 sentences)
-- Core features (bulleted)
-- Tech stack recommendation
-- Page/screen breakdown
-- Any important UX details`;
+IMPORTANT: Only include features that were explicitly provided. Do not add features the user didn't select.`;
