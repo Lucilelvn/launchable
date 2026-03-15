@@ -4,6 +4,7 @@ import ExplorePage from './pages/ExplorePage';
 import AssessPage from './pages/AssessPage';
 import ResultPage from './pages/ResultPage';
 import RefinePage from './pages/RefinePage';
+import IdeasPage from './pages/IdeasPage';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/assess" element={<AssessPage />} />
         <Route path="/refine" element={<RefinePage />} />
         <Route path="/result" element={<ResultPage />} />
+        <Route path="/ideas" element={<IdeasPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -87,6 +87,22 @@ export interface BuildPrompt {
   reasoning: string;
 }
 
+export interface SavedIdea {
+  id: string;
+  concept: string;
+  audience?: string;
+  score: number;
+  verdict: string;
+  demand: number;
+  competition: number;
+  shippability: number;
+  persona?: Persona;
+  features?: Feature[];
+  buildPrompt?: string;
+  buildTool?: string;
+  savedAt: string;
+}
+
 export interface ExploreMessage {
   role: 'assistant' | 'user';
   content: string;
