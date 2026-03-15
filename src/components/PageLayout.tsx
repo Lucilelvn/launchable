@@ -199,7 +199,7 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
           </div>
         ) : null}
 
-        <div className={`${WIDTH_CLASS[width]} pb-12`}>
+        <div className="p-8">
           {children}
         </div>
       </main>
