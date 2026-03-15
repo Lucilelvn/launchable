@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage';
 import ExplorePage from './pages/ExplorePage';
 import AssessPage from './pages/AssessPage';
 import ResultPage from './pages/ResultPage';
+import RefinePage from './pages/RefinePage';
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/assess" element={<AssessPage />} />
+        <Route path="/refine" element={<RefinePage />} />
         <Route path="/result" element={<ResultPage />} />
       </Routes>
     </BrowserRouter>

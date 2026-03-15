@@ -60,6 +60,25 @@ export interface Mutation {
   description: string;
 }
 
+export interface Persona {
+  name: string;
+  description: string;
+  pain_points: string[];
+}
+
+export interface Feature {
+  id: string;
+  name: string;
+  description: string;
+  priority: 'must-have' | 'nice-to-have';
+  accepted: boolean;
+}
+
+export interface Refinement {
+  persona: Persona;
+  features: Feature[];
+}
+
 export interface BuildPrompt {
   tool: 'claude-code' | 'lovable' | 'bolt' | 'replit';
   prompt: string;
