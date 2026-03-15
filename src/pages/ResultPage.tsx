@@ -47,6 +47,7 @@ export default function ResultPage() {
   const isRefined = state !== null && 'persona' in state;
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!state || started.current) return;
@@ -128,16 +129,39 @@ export default function ResultPage() {
 
   const refined = state as RefinedResultState;
 
-  function handleSave() {
-    if (!buildPrompt) return;
+  async function generateTitle(concept: string): Promise<string> {
+    try {
+      const client = getAnthropicClient();
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 30,
+        messages: [{
+          role: 'user',
+          content: `Summarize this product idea into exactly 3-5 words as a short catchy title. No quotes, no punctuation, no explanation — just the title.\n\nIdea: ${concept}`,
+        }],
+      });
+      const block = response.content.find((b) => b.type === 'text');
+      return block && 'text' in block ? block.text.trim() : concept.split(/\s+/).slice(0, 5).join(' ');
+    } catch {
+      return concept.split(/\s+/).slice(0, 5).join(' ');
+    }
+  }
+
+  async function handleSave() {
+    if (!buildPrompt || saving) return;
+    setSaving(true);
+
     const score = Math.round(
       (refined.assessment.demand.score * 0.4 +
         (10 - refined.assessment.competition.score) * 0.25 +
         refined.assessment.shippability.score * 0.35) * 10,
     ) / 10;
 
+    const title = await generateTitle(refined.concept);
+
     const idea: SavedIdea = {
       id: `idea-${Date.now()}`,
+      title,
       concept: refined.concept,
       audience: refined.audience,
       score,
@@ -153,12 +177,13 @@ export default function ResultPage() {
     };
     saveIdea(idea);
     setSaved(true);
+    setSaving(false);
   }
 
   const saveAction = buildPrompt ? (
     <button
       onClick={handleSave}
-      disabled={saved}
+      disabled={saved || saving}
       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
         saved
           ? 'bg-green-50 text-green-600 border border-green-200'
@@ -166,7 +191,7 @@ export default function ResultPage() {
       }`}
     >
       {saved ? <Check className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
-      {saved ? 'Saved!' : 'Save idea'}
+      {saving ? 'Saving...' : saved ? 'Saved!' : 'Save idea'}
     </button>
   ) : null;
 

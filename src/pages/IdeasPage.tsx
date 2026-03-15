@@ -143,7 +143,7 @@ function IdeaCard({
   onToggleStar: () => void;
   onCopyPrompt: () => void;
 }) {
-  const title = condensedTitle(idea.concept);
+  const title = idea.title ?? condensedTitle(idea.concept);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition-all hover:shadow-md">
@@ -171,11 +171,7 @@ function IdeaCard({
 
         {/* Title + description */}
         <h3 className="text-sm font-semibold text-gray-900 mb-1">{title}</h3>
-        {idea.concept.split(/\s+/).length > 8 ? (
-          <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-3">{idea.concept}</p>
-        ) : (
-          <div className="mb-3" />
-        )}
+        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-3">{idea.concept}</p>
 
         {/* Score bars */}
         <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-400 font-medium">
