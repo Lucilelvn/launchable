@@ -28,9 +28,9 @@ import PaywallModal from '../components/assess/PaywallModal';
 // ---------- loading steps ----------
 
 const LOADING_STEPS = [
-  { icon: Search, label: 'Understanding your idea...' },
-  { icon: BarChart3, label: 'Analyzing market demand...' },
-  { icon: Swords, label: 'Scanning the competition...' },
+  { icon: Search, label: 'Researching demand signals...' },
+  { icon: Swords, label: 'Searching for competitors...' },
+  { icon: BarChart3, label: 'Scoring with market evidence...' },
   { icon: Hammer, label: 'Evaluating shippability...' },
   { icon: Dna, label: 'Generating smarter mutations...' },
   { icon: FileCode, label: 'Crafting your build prompt...' },
@@ -43,14 +43,14 @@ function compositeScore(d: number, c: number, s: number): number {
 }
 
 function verdictLabel(score: number): string {
-  if (score >= 7.5) return 'Strong idea';
-  if (score >= 5) return 'Has potential';
-  return 'Needs work';
+  if (score >= 7.5) return 'Strong';
+  if (score >= 5.5) return 'Promising';
+  return 'Weak';
 }
 
 function verdictGradient(score: number): string {
   if (score >= 7.5) return 'from-green-500 to-emerald-400';
-  if (score >= 5) return 'from-orange-400 to-amber-400';
+  if (score >= 5.5) return 'from-orange-400 to-amber-400';
   return 'from-red-500 to-orange-400';
 }
 
@@ -356,7 +356,7 @@ export default function AssessPage() {
                 <span className="text-lg font-bold text-gray-300">/10</span>
               </div>
               <div className="mt-1 flex items-center justify-center gap-1">
-                <Zap className={`h-3 w-3 ${score >= 7.5 ? 'text-green-500' : score >= 5 ? 'text-orange-400' : 'text-red-400'}`} />
+                <Zap className={`h-3 w-3 ${score >= 7.5 ? 'text-green-500' : score >= 5.5 ? 'text-orange-400' : 'text-red-400'}`} />
                 <span className="text-xs font-semibold text-gray-500">
                   {verdictLabel(score)}
                 </span>
@@ -372,7 +372,7 @@ export default function AssessPage() {
                 <div className="flex items-center gap-1.5 mt-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                   <span className="text-xs text-amber-600 font-medium">
-                    AI wrapper risk — consider the mutations below to differentiate.
+                    {assessment.ai_wrapper_explanation ?? 'AI wrapper risk — consider the mutations below to differentiate.'}
                   </span>
                 </div>
               ) : null}

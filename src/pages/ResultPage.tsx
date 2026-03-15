@@ -10,7 +10,7 @@ import {
   Loader2,
   Rocket,
 } from 'lucide-react';
-import { getClient } from '../lib/anthropic';
+import { getClient } from '../lib/groq';
 import { BUILD_PROMPT_SYSTEM } from '../lib/prompts';
 import { BUILD_TOOLS } from '../lib/constants';
 import type { LegacyAssessment, BuildPrompt, Mutation } from '../types';

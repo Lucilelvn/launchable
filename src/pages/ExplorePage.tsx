@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Loader2, SendHorizonal, Rocket } from 'lucide-react';
-import { getClient } from '../lib/anthropic';
+import { getClient } from '../lib/groq';
 import { CONCEPT_PROMPT } from '../lib/prompts';
 
 // ---------- pill data ----------
