@@ -3,6 +3,7 @@ import { getAnthropicClient } from '../lib/claude';
 import { ASSESS_SYSTEM_PROMPT } from '../lib/prompts';
 import { incrementUsage } from '../lib/usage';
 import { IS_MOCK, mockAssess } from '../lib/mock';
+import { IS_LOCAL_LLM, localAssess } from '../lib/local-llm';
 import type { Assessment, IdeaInput } from '../types';
 
 export function useAssessIdea() {
@@ -28,19 +29,25 @@ export function useAssessIdea() {
         return;
       }
 
-      const client = getAnthropicClient();
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        system: ASSESS_SYSTEM_PROMPT,
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
-        messages: [{ role: 'user', content: userMessage }],
-      });
+      let text: string;
 
-      // Find the last text block (after web search tool use)
-      const textBlocks = response.content.filter((b) => b.type === 'text');
-      const lastText = textBlocks[textBlocks.length - 1];
-      const text = lastText && 'text' in lastText ? lastText.text : '';
+      if (IS_LOCAL_LLM) {
+        text = await localAssess(userMessage, ASSESS_SYSTEM_PROMPT);
+      } else {
+        const client = getAnthropicClient();
+        const response = await client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4096,
+          system: ASSESS_SYSTEM_PROMPT,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+          messages: [{ role: 'user', content: userMessage }],
+        });
+
+        // Find the last text block (after web search tool use)
+        const textBlocks = response.content.filter((b) => b.type === 'text');
+        const lastText = textBlocks[textBlocks.length - 1];
+        text = lastText && 'text' in lastText ? lastText.text : '';
+      }
 
       // Extract JSON from the response (may be wrapped in markdown fences)
       const jsonMatch = text.match(/\{[\s\S]*\}/);

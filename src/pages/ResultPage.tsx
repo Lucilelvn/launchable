@@ -15,6 +15,7 @@ import { BUILD_PROMPT_SYSTEM } from '../lib/prompts';
 import { BUILD_TOOLS } from '../lib/constants';
 import { saveIdea } from '../lib/ideas';
 import { IS_MOCK, mockBuildPrompt, mockGenerateTitle } from '../lib/mock';
+import { IS_LOCAL_LLM, localBuildPrompt, localGenerateTitle } from '../lib/local-llm';
 import PageLayout from '../components/PageLayout';
 import type { Assessment, Persona, Feature, BuildPrompt, SavedIdea } from '../types';
 
@@ -98,16 +99,23 @@ export default function ResultPage() {
         `\nAssessment: Demand ${s.assessment.demand.score}/10, Competition ${s.assessment.competition.score}/10, Shippability ${s.assessment.shippability.score}/10`,
       ].filter(Boolean).join('\n');
 
-      const client = getAnthropicClient();
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
-        system: BUILD_PROMPT_SYSTEM,
-        messages: [{ role: 'user', content: userMessage }],
-      });
+      let text: string;
 
-      const textBlock = response.content.find((b) => b.type === 'text');
-      const text = textBlock && 'text' in textBlock ? textBlock.text : '';
+      if (IS_LOCAL_LLM) {
+        text = await localBuildPrompt(userMessage, BUILD_PROMPT_SYSTEM);
+      } else {
+        const client = getAnthropicClient();
+        const response = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2048,
+          system: BUILD_PROMPT_SYSTEM,
+          messages: [{ role: 'user', content: userMessage }],
+        });
+
+        const textBlock = response.content.find((b) => b.type === 'text');
+        text = textBlock && 'text' in textBlock ? textBlock.text : '';
+      }
+
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No valid JSON in response');
 
@@ -138,6 +146,13 @@ export default function ResultPage() {
 
   async function generateTitle(concept: string): Promise<string> {
     if (IS_MOCK) return mockGenerateTitle(concept);
+    if (IS_LOCAL_LLM) {
+      try {
+        return await localGenerateTitle(concept);
+      } catch {
+        return concept.split(/\s+/).slice(0, 5).join(' ');
+      }
+    }
     try {
       const client = getAnthropicClient();
       const response = await client.messages.create({
