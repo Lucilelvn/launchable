@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { getAnthropicClient } from '../lib/claude';
 import { ASSESS_SYSTEM_PROMPT } from '../lib/prompts';
-import { incrementUsage } from '../lib/usage';
 import { IS_MOCK, mockAssess } from '../lib/mock';
 import { IS_LOCAL_LLM, localAssess } from '../lib/local-llm';
 import type { Assessment, IdeaInput } from '../types';
@@ -10,6 +11,7 @@ export function useAssessIdea() {
   const [isLoading, setIsLoading] = useState(false);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const incrementUsage = useMutation(api.usage.increment);
 
   const assess = useCallback(async (input: IdeaInput) => {
     setIsLoading(true);
@@ -25,7 +27,7 @@ export function useAssessIdea() {
       if (IS_MOCK) {
         const parsed = await mockAssess();
         setAssessment(parsed);
-        incrementUsage();
+        void incrementUsage();
         return;
       }
 
@@ -57,7 +59,7 @@ export function useAssessIdea() {
 
       const parsed = JSON.parse(jsonMatch[0]) as Assessment;
       setAssessment(parsed);
-      incrementUsage();
+      void incrementUsage();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Something went wrong',
@@ -65,7 +67,7 @@ export function useAssessIdea() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [incrementUsage]);
 
   return { isLoading, assessment, error, assess };
 }

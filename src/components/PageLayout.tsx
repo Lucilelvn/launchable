@@ -10,8 +10,9 @@ import {
   Lightbulb,
   Star,
 } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useAuth } from '../hooks/useAuth';
-import { getSavedIdeas } from '../lib/ideas';
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -30,6 +31,10 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isLoading, signIn, signOut } = useAuth();
+  const allIdeas = useQuery(api.ideas.list);
+  const starredIdeas = useQuery(api.ideas.listStarred);
+  const ideasCount = allIdeas?.length ?? 0;
+  const starredCount = starredIdeas?.length ?? 0;
 
   function handleBack() {
     if (back === 'history') {
@@ -82,9 +87,6 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
   }
 
   // ---- Logged in: sidebar ----
-  const ideas = getSavedIdeas();
-  const starredCount = ideas.filter((i) => i.starred).length;
-
   return (
     <div className="min-h-screen bg-white flex">
       {/* Sidebar */}
@@ -119,7 +121,7 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
               path="/ideas"
               current={location.pathname}
               onClick={() => navigate('/ideas')}
-              badge={ideas.length > 0 ? ideas.length : undefined}
+              badge={ideasCount > 0 ? ideasCount : undefined}
             />
             <SidebarLink
               icon={Star}

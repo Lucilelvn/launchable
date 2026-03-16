@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useQuery, useMutation } from 'convex/react';
 import {
   Trash2,
   User,
@@ -7,10 +8,11 @@ import {
   Check,
   Lightbulb,
   Star,
+  Loader2,
 } from 'lucide-react';
-import { getSavedIdeas, deleteIdea, toggleStar } from '../lib/ideas';
+import { api } from '../../convex/_generated/api';
 import PageLayout from '../components/PageLayout';
-import type { SavedIdea } from '../types';
+import type { Id } from '../../convex/_generated/dataModel';
 
 function verdictColor(score: number): string {
   if (score >= 7.5) return 'text-green-500';
@@ -24,8 +26,8 @@ function verdictLabel(score: number): string {
   return 'Weak';
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+function timeAgo(ts: number): string {
+  const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m ago`;
@@ -39,28 +41,30 @@ export default function IdeasPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isStarredView = location.pathname === '/ideas/starred';
-  const [ideas, setIdeas] = useState<SavedIdea[]>(getSavedIdeas);
+
+  const allIdeas = useQuery(api.ideas.list);
+  const starredIdeas = useQuery(api.ideas.listStarred);
+  const removeIdea = useMutation(api.ideas.remove);
+  const toggleStarMutation = useMutation(api.ideas.toggleStar);
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const filtered = isStarredView ? ideas.filter((i) => i.starred) : ideas;
+  const ideas = isStarredView ? starredIdeas : allIdeas;
+  const isLoading = ideas === undefined;
 
-  function handleDelete(id: string) {
-    deleteIdea(id);
-    setIdeas((prev) => prev.filter((i) => i.id !== id));
+  function handleDelete(id: Id<"ideas">) {
+    void removeIdea({ id });
   }
 
-  function handleToggleStar(id: string) {
-    toggleStar(id);
-    setIdeas((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, starred: !i.starred } : i)),
-    );
+  function handleToggleStar(id: Id<"ideas">) {
+    void toggleStarMutation({ id });
   }
 
-  async function handleCopyPrompt(idea: SavedIdea) {
+  async function handleCopyPrompt(idea: { _id: Id<"ideas">; buildPrompt?: string }) {
     if (!idea.buildPrompt) return;
     await navigator.clipboard.writeText(idea.buildPrompt);
-    setCopiedId(idea.id);
+    setCopiedId(idea._id);
     setTimeout(() => setCopiedId(null), 2000);
   }
 
@@ -74,13 +78,19 @@ export default function IdeasPage() {
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold">{title}</h1>
         <p className="text-gray-500">
-          {filtered.length === 0
-            ? emptyMessage
-            : `${filtered.length} idea${filtered.length === 1 ? '' : 's'}`}
+          {isLoading
+            ? 'Loading...'
+            : ideas.length === 0
+              ? emptyMessage
+              : `${ideas.length} idea${ideas.length === 1 ? '' : 's'}`}
         </p>
       </div>
 
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 text-orange-400 animate-spin" />
+        </div>
+      ) : ideas.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-6">
           <div className="rounded-full bg-gray-100 p-6">
             {isStarredView ? (
@@ -100,15 +110,15 @@ export default function IdeasPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((idea) => (
+          {ideas.map((idea) => (
             <IdeaCard
-              key={idea.id}
+              key={idea._id}
               idea={idea}
-              expanded={expandedId === idea.id}
-              copied={copiedId === idea.id}
-              onToggle={() => setExpandedId(expandedId === idea.id ? null : idea.id)}
-              onDelete={() => handleDelete(idea.id)}
-              onToggleStar={() => handleToggleStar(idea.id)}
+              expanded={expandedId === idea._id}
+              copied={copiedId === idea._id}
+              onToggle={() => setExpandedId(expandedId === idea._id ? null : idea._id)}
+              onDelete={() => handleDelete(idea._id)}
+              onToggleStar={() => handleToggleStar(idea._id)}
               onCopyPrompt={() => handleCopyPrompt(idea)}
             />
           ))}
@@ -119,11 +129,27 @@ export default function IdeasPage() {
 }
 
 function condensedTitle(concept: string): string {
-  // Take first ~8 words, strip trailing punctuation
   const words = concept.split(/\s+/).slice(0, 8);
   let title = words.join(' ');
   if (concept.split(/\s+/).length > 8) title += '...';
   return title;
+}
+
+interface IdeaDoc {
+  _id: Id<"ideas">;
+  title?: string;
+  concept: string;
+  audience?: string;
+  score: number;
+  verdict: string;
+  demand: { score: number };
+  competition: { score: number };
+  shippability: { score: number };
+  persona?: { name: string; description: string; pain_points: string[] };
+  features?: { id: string; name: string; description: string; priority: string; complexity: string; user_appetite: string; accepted: boolean }[];
+  buildPrompt?: string;
+  starred: boolean;
+  createdAt: number;
 }
 
 function IdeaCard({
@@ -135,7 +161,7 @@ function IdeaCard({
   onToggleStar,
   onCopyPrompt,
 }: {
-  idea: SavedIdea;
+  idea: IdeaDoc;
   expanded: boolean;
   copied: boolean;
   onToggle: () => void;
@@ -147,9 +173,7 @@ function IdeaCard({
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition-all hover:shadow-md">
-      {/* Header */}
       <button onClick={onToggle} className="w-full text-left p-5 cursor-pointer">
-        {/* Top row: score badge + star */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold ${
@@ -169,42 +193,39 @@ function IdeaCard({
           {idea.starred ? <Star className="h-3.5 w-3.5 text-orange-400 fill-orange-400" /> : null}
         </div>
 
-        {/* Title + description */}
         <h3 className="text-sm font-semibold text-gray-900 mb-1">{title}</h3>
         <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mb-3">{idea.concept}</p>
 
-        {/* Score bars */}
         <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-400 font-medium">
           <div>
             <div className="flex justify-between mb-1">
               <span>Demand</span>
-              <span className="text-gray-600">{idea.demand}</span>
+              <span className="text-gray-600">{idea.demand.score}</span>
             </div>
             <div className="h-1.5 rounded-full bg-gray-100">
-              <div className="h-1.5 rounded-full bg-green-400 transition-all" style={{ width: `${idea.demand * 10}%` }} />
+              <div className="h-1.5 rounded-full bg-green-400 transition-all" style={{ width: `${idea.demand.score * 10}%` }} />
             </div>
           </div>
           <div>
             <div className="flex justify-between mb-1">
               <span>Competition</span>
-              <span className="text-gray-600">{idea.competition}</span>
+              <span className="text-gray-600">{idea.competition.score}</span>
             </div>
             <div className="h-1.5 rounded-full bg-gray-100">
-              <div className="h-1.5 rounded-full bg-amber-400 transition-all" style={{ width: `${idea.competition * 10}%` }} />
+              <div className="h-1.5 rounded-full bg-amber-400 transition-all" style={{ width: `${idea.competition.score * 10}%` }} />
             </div>
           </div>
           <div>
             <div className="flex justify-between mb-1">
               <span>Shippability</span>
-              <span className="text-gray-600">{idea.shippability}</span>
+              <span className="text-gray-600">{idea.shippability.score}</span>
             </div>
             <div className="h-1.5 rounded-full bg-gray-100">
-              <div className="h-1.5 rounded-full bg-orange-400 transition-all" style={{ width: `${idea.shippability * 10}%` }} />
+              <div className="h-1.5 rounded-full bg-orange-400 transition-all" style={{ width: `${idea.shippability.score * 10}%` }} />
             </div>
           </div>
         </div>
 
-        {/* Meta row */}
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           {idea.persona ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600">
@@ -217,11 +238,10 @@ function IdeaCard({
               {idea.features.length} features
             </span>
           ) : null}
-          <span className="ml-auto text-[10px] text-gray-300">{timeAgo(idea.savedAt)}</span>
+          <span className="ml-auto text-[10px] text-gray-300">{timeAgo(idea.createdAt)}</span>
         </div>
       </button>
 
-      {/* Expanded details */}
       {expanded ? (
         <div className="border-t border-gray-100 px-5 py-4 space-y-3">
           <p className="text-xs text-gray-500 leading-relaxed">{idea.verdict}</p>
@@ -240,7 +260,6 @@ function IdeaCard({
             </div>
           ) : null}
 
-          {/* Actions */}
           <div className="flex gap-2 pt-1">
             <button
               onClick={onToggleStar}
