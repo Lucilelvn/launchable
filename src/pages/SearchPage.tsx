@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, Star, Lightbulb } from 'lucide-react';
-import { getSavedIdeas } from '../lib/ideas';
+import { useQuery } from 'convex/react';
+import { Search, User, Star, Lightbulb, Loader2 } from 'lucide-react';
+import { api } from '../../convex/_generated/api';
 import PageLayout from '../components/PageLayout';
 
 function verdictColor(score: number): string {
@@ -13,20 +14,13 @@ function verdictColor(score: number): string {
 export default function SearchPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const ideas = getSavedIdeas();
 
-  const results = useMemo(() => {
-    if (!query.trim()) return ideas;
-    const q = query.toLowerCase();
-    return ideas.filter(
-      (idea) =>
-        idea.concept.toLowerCase().includes(q) ||
-        idea.verdict.toLowerCase().includes(q) ||
-        idea.persona?.name.toLowerCase().includes(q) ||
-        idea.audience?.toLowerCase().includes(q) ||
-        idea.features?.some((f) => f.name.toLowerCase().includes(q)),
-    );
-  }, [query, ideas]);
+  const allIdeas = useQuery(api.ideas.list);
+  const searchResults = useQuery(api.ideas.search, query.trim() ? { query: query.trim() } : "skip");
+
+  const ideas = allIdeas ?? [];
+  const results = query.trim() ? (searchResults ?? []) : ideas;
+  const isLoading = allIdeas === undefined;
 
   return (
     <PageLayout width="wide">
@@ -36,7 +30,6 @@ export default function SearchPage() {
           <p className="text-gray-500">Find ideas by concept, persona, features, or audience.</p>
         </div>
 
-        {/* Search input */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -49,8 +42,11 @@ export default function SearchPage() {
           />
         </div>
 
-        {/* Results */}
-        {ideas.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 text-orange-400 animate-spin" />
+          </div>
+        ) : ideas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="rounded-full bg-gray-100 p-6">
               <Lightbulb className="h-10 w-10 text-gray-300" />
@@ -77,7 +73,7 @@ export default function SearchPage() {
             <div className="space-y-1">
               {results.map((idea) => (
                 <button
-                  key={idea.id}
+                  key={idea._id}
                   onClick={() => navigate('/ideas')}
                   className="w-full flex items-center gap-4 rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
                 >

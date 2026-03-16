@@ -12,12 +12,13 @@ import {
 } from 'lucide-react';
 import { getAnthropicClient } from '../lib/claude';
 import { BUILD_PROMPT_SYSTEM } from '../lib/prompts';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { BUILD_TOOLS } from '../lib/constants';
-import { saveIdea } from '../lib/ideas';
 import { IS_MOCK, mockBuildPrompt, mockGenerateTitle } from '../lib/mock';
 import { IS_LOCAL_LLM, localBuildPrompt, localGenerateTitle } from '../lib/local-llm';
 import PageLayout from '../components/PageLayout';
-import type { Assessment, Persona, Feature, BuildPrompt, SavedIdea } from '../types';
+import type { Assessment, Persona, Feature, BuildPrompt } from '../types';
 
 interface RefinedResultState {
   concept: string;
@@ -39,6 +40,7 @@ export default function ResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as RefinedResultState | LegacyResultState | null;
+  const saveIdea = useMutation(api.ideas.save);
 
   const [buildPrompt, setBuildPrompt] = useState<BuildPrompt | null>(null);
   const [loading, setLoading] = useState(false);
@@ -182,25 +184,28 @@ export default function ResultPage() {
 
     const title = await generateTitle(refined.concept);
 
-    const idea: SavedIdea = {
-      id: `idea-${Date.now()}`,
-      title,
-      concept: refined.concept,
-      audience: refined.audience,
-      score,
-      verdict: refined.assessment.verdict,
-      demand: refined.assessment.demand.score,
-      competition: refined.assessment.competition.score,
-      shippability: refined.assessment.shippability.score,
-      persona: refined.persona,
-      features: refined.features,
-      buildPrompt: buildPrompt.prompt,
-      buildTool: buildPrompt.tool,
-      savedAt: new Date().toISOString(),
-    };
-    saveIdea(idea);
-    setSaved(true);
-    setSaving(false);
+    try {
+      await saveIdea({
+        title,
+        concept: refined.concept,
+        audience: refined.audience,
+        score,
+        verdict: refined.assessment.verdict,
+        demand: refined.assessment.demand,
+        competition: refined.assessment.competition,
+        shippability: refined.assessment.shippability,
+        mutations: refined.assessment.mutations,
+        persona: refined.persona,
+        features: refined.features,
+        buildPrompt: buildPrompt.prompt,
+        buildTool: buildPrompt.tool,
+      });
+      setSaved(true);
+    } catch {
+      // Fallback silently — user can retry
+    } finally {
+      setSaving(false);
+    }
   }
 
   const saveAction = buildPrompt ? (

@@ -17,8 +17,9 @@ import {
   Check,
   Pencil,
 } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { useAssessIdea } from '../hooks/useAssessIdea';
-import { getUsageCount, hasReachedFreeLimit, isPremium, setPremium } from '../lib/usage';
 import { FREE_ASSESSMENT_LIMIT } from '../lib/constants';
 import PageLayout from '../components/PageLayout';
 import DimensionCard from '../components/assess/DimensionCard';
@@ -84,14 +85,16 @@ export default function AssessPage() {
   const [apiDone, setApiDone] = useState(false);
   const [prevScores, setPrevScores] = useState<{ demand: number; competition: number; shippability: number } | null>(null);
 
-  const premium = isPremium();
-  const usageCount = getUsageCount();
+  const usageData = useQuery(api.usage.get);
+  const usageCount = usageData?.count ?? 0;
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const premium = false; // TODO: read from user profile when billing is wired
   const remaining = Math.max(0, FREE_ASSESSMENT_LIMIT - usageCount);
-  const atLimit = hasReachedFreeLimit();
+  const atLimit = !isLocalhost && !premium && usageCount >= FREE_ASSESSMENT_LIMIT;
 
   useEffect(() => {
     if (searchParams.get('upgraded') === 'true') {
-      setPremium(true);
+      // TODO: verify upgrade via Convex when billing is wired
       window.history.replaceState({}, '', '/assess');
     }
   }, [searchParams]);
