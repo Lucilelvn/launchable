@@ -15,6 +15,7 @@ import {
   Dna,
   FileCode,
   Check,
+  Pencil,
 } from 'lucide-react';
 import { useAssessIdea } from '../hooks/useAssessIdea';
 import { getUsageCount, hasReachedFreeLimit, isPremium, setPremium } from '../lib/usage';
@@ -72,7 +73,8 @@ export default function AssessPage() {
   const [concept, setConcept] = useState(locationState?.concept ?? '');
   const [audience, setAudience] = useState('');
   const [timeline, setTimeline] = useState('');
-  const [selectedMutation, setSelectedMutation] = useState<number | null>(null);
+  const [selectedMutations, setSelectedMutations] = useState<Set<number>>(new Set());
+  const [customTweak, setCustomTweak] = useState('');
   const [showPaywall, setShowPaywall] = useState(false);
   const { isLoading, assessment, error, assess } = useAssessIdea();
   const autoSubmitted = useRef(false);
@@ -80,6 +82,7 @@ export default function AssessPage() {
   const [phase, setPhase] = useState<Phase>('input');
   const [activeStep, setActiveStep] = useState(0);
   const [apiDone, setApiDone] = useState(false);
+  const [prevScores, setPrevScores] = useState<{ demand: number; competition: number; shippability: number } | null>(null);
 
   const premium = isPremium();
   const usageCount = getUsageCount();
@@ -145,7 +148,11 @@ export default function AssessPage() {
       setShowPaywall(true);
       return;
     }
-    setSelectedMutation(null);
+    if (assessment) {
+      setPrevScores({ demand: assessment.demand.score, competition: assessment.competition.score, shippability: assessment.shippability.score });
+    }
+    setSelectedMutations(new Set());
+    setCustomTweak('');
     setApiDone(false);
     setPhase('loading');
     assess({
@@ -156,14 +163,30 @@ export default function AssessPage() {
   }
 
   function handleEnhance() {
-    if (selectedMutation === null || !assessment) return;
-    const mutation = assessment.mutations[selectedMutation];
-    setConcept(mutation.idea);
-    setSelectedMutation(null);
+    if (!assessment || (selectedMutations.size === 0 && !customTweak.trim())) return;
+    setPrevScores({ demand: assessment.demand.score, competition: assessment.competition.score, shippability: assessment.shippability.score });
+
+    const parts: string[] = [`Original idea: ${concept}`];
+    if (selectedMutations.size > 0) {
+      const directions = Array.from(selectedMutations).map((i) => assessment.mutations[i].idea);
+      parts.push(`Apply these directions:\n${directions.map((d) => `- ${d}`).join('\n')}`);
+    }
+    if (customTweak.trim()) {
+      parts.push(`Additional direction from user: ${customTweak.trim()}`);
+    }
+    parts.push('Combine the above into one refined product idea and assess it.');
+
+    const newConcept = selectedMutations.size === 1 && !customTweak.trim()
+      ? assessment.mutations[Array.from(selectedMutations)[0]].idea
+      : parts.join('\n\n');
+
+    setConcept(newConcept);
+    setSelectedMutations(new Set());
+    setCustomTweak('');
     setApiDone(false);
     setPhase('loading');
     assess({
-      concept: mutation.idea,
+      concept: newConcept,
       audience: audience.trim() || undefined,
       timeline: timeline.trim() || undefined,
     });
@@ -173,12 +196,19 @@ export default function AssessPage() {
     setConcept('');
     setAudience('');
     setTimeline('');
+    setPrevScores(null);
+    setSelectedMutations(new Set());
+    setCustomTweak('');
     setPhase('input');
   }
 
   const score = assessment
     ? compositeScore(assessment.demand.score, assessment.competition.score, assessment.shippability.score)
     : 0;
+  const prevComposite = prevScores
+    ? compositeScore(prevScores.demand, prevScores.competition, prevScores.shippability)
+    : null;
+  const scoreDelta = prevComposite !== null ? Math.round((score - prevComposite) * 10) / 10 : null;
 
   const usageAction = (
     <span className="text-xs text-gray-400">
@@ -358,6 +388,11 @@ export default function AssessPage() {
               <span className="text-xs font-semibold text-gray-500">
                 {verdictLabel(score)}
               </span>
+              {scoreDelta !== null && scoreDelta !== 0 ? (
+                <span className={`text-[10px] font-bold ml-1 ${scoreDelta > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {scoreDelta > 0 ? '+' : ''}{scoreDelta}
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="w-px h-16 bg-gray-200 shrink-0" />
@@ -383,9 +418,9 @@ export default function AssessPage() {
       </div>
 
       <div className="grid gap-4 grid-cols-3 mb-6">
-        <DimensionCard label="Demand" dimension={assessment.demand} icon={<TrendingUp className="h-4 w-4" />} color="#22c55e" delay={200} />
-        <DimensionCard label="Competition" dimension={assessment.competition} icon={<Shield className="h-4 w-4" />} color="#f59e0b" delay={400} />
-        <DimensionCard label="Shippability" dimension={assessment.shippability} icon={<Wrench className="h-4 w-4" />} color="#fb923c" delay={600} />
+        <DimensionCard label="Demand" dimension={assessment.demand} icon={<TrendingUp className="h-4 w-4" />} color="#22c55e" delay={200} delta={prevScores ? assessment.demand.score - prevScores.demand : undefined} />
+        <DimensionCard label="Competition" dimension={assessment.competition} icon={<Shield className="h-4 w-4" />} color="#f59e0b" delay={400} delta={prevScores ? assessment.competition.score - prevScores.competition : undefined} />
+        <DimensionCard label="Shippability" dimension={assessment.shippability} icon={<Wrench className="h-4 w-4" />} color="#fb923c" delay={600} delta={prevScores ? assessment.shippability.score - prevScores.shippability : undefined} />
       </div>
 
       <div className="grid gap-6 grid-cols-5">
@@ -396,18 +431,39 @@ export default function AssessPage() {
               <MutationCard
                 key={i}
                 mutation={m}
-                selected={selectedMutation === i}
-                onSelect={() => setSelectedMutation(selectedMutation === i ? null : i)}
+                selected={selectedMutations.has(i)}
+                onSelect={() => setSelectedMutations((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(i)) next.delete(i);
+                  else next.add(i);
+                  return next;
+                })}
               />
             ))}
           </div>
-          {selectedMutation !== null ? (
+
+          <div className="space-y-1.5">
+            <label htmlFor="custom-tweak" className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              <Pencil className="h-3 w-3" />
+              Or describe your own twist
+            </label>
+            <textarea
+              id="custom-tweak"
+              value={customTweak}
+              onChange={(e) => setCustomTweak(e.target.value)}
+              placeholder="e.g. Focus on solo freelancers, add Stripe billing..."
+              rows={2}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 resize-none"
+            />
+          </div>
+
+          {selectedMutations.size > 0 || customTweak.trim() ? (
             <button
               onClick={handleEnhance}
               className="w-full rounded-xl bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 px-3 py-2.5 text-sm font-bold text-orange-600 hover:from-orange-100 hover:to-pink-100 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <Sparkles className="h-4 w-4" />
-              Re-assess with this mutation
+              Re-assess {selectedMutations.size > 1 ? `with ${selectedMutations.size} mutations` : customTweak.trim() && selectedMutations.size === 0 ? 'with your twist' : 'with mutation'}
             </button>
           ) : null}
         </section>
