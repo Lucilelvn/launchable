@@ -31,6 +31,10 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isLoading, signIn, signOut } = useAuth();
+  const allIdeas = useQuery(api.ideas.list);
+  const starredIdeas = useQuery(api.ideas.listStarred);
+  const ideasCount = allIdeas?.length ?? 0;
+  const starredCount = starredIdeas?.length ?? 0;
 
   function handleBack() {
     if (back === 'history') {
@@ -83,11 +87,6 @@ export default function PageLayout({ children, back, actions, width = 'wide' }: 
   }
 
   // ---- Logged in: sidebar ----
-  const allIdeas = useQuery(api.ideas.list);
-  const starredIdeas = useQuery(api.ideas.listStarred);
-  const ideasCount = allIdeas?.length ?? 0;
-  const starredCount = starredIdeas?.length ?? 0;
-
   return (
     <div className="min-h-screen bg-white flex">
       {/* Sidebar */}
