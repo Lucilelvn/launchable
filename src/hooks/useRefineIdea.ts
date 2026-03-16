@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { getAnthropicClient } from '../lib/claude';
 import { REFINE_SYSTEM_PROMPT } from '../lib/prompts';
 import { IS_MOCK, mockRefine } from '../lib/mock';
+import { IS_LOCAL_LLM, localRefine } from '../lib/local-llm';
 import type { Assessment, Refinement } from '../types';
 
 export function useRefineIdea() {
@@ -29,16 +30,23 @@ export function useRefineIdea() {
         return;
       }
 
-      const client = getAnthropicClient();
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
-        system: REFINE_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: parts.join('\n') }],
-      });
+      let text: string;
 
-      const textBlock = response.content.find((b) => b.type === 'text');
-      const text = textBlock && 'text' in textBlock ? textBlock.text : '';
+      if (IS_LOCAL_LLM) {
+        text = await localRefine(parts.join('\n'), REFINE_SYSTEM_PROMPT);
+      } else {
+        const client = getAnthropicClient();
+        const response = await client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2048,
+          system: REFINE_SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: parts.join('\n') }],
+        });
+
+        const textBlock = response.content.find((b) => b.type === 'text');
+        text = textBlock && 'text' in textBlock ? textBlock.text : '';
+      }
+
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No valid JSON found in response');
 

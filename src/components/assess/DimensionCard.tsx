@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import type { DimensionScore } from '../../types';
 
 interface DimensionCardProps {
@@ -8,9 +8,10 @@ interface DimensionCardProps {
   icon: React.ReactNode;
   color: string;
   delay?: number;
+  delta?: number;
 }
 
-export default function DimensionCard({ label, dimension, icon, color, delay = 0 }: DimensionCardProps) {
+export default function DimensionCard({ label, dimension, icon, color, delay = 0, delta }: DimensionCardProps) {
   const [animated, setAnimated] = useState(false);
   const [showEvidence, setShowEvidence] = useState(false);
   const hasEvidence = dimension.evidence && dimension.evidence.length > 0;
@@ -50,6 +51,14 @@ export default function DimensionCard({ label, dimension, icon, color, delay = 0
           <span className="text-2xl font-bold text-gray-900">{dimension.score}</span>
         </div>
       </div>
+      {delta !== undefined && delta !== 0 ? (
+        <div className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+          delta > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
+        }`}>
+          {delta > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+          {delta > 0 ? '+' : ''}{delta}
+        </div>
+      ) : null}
       <div className="flex items-center gap-1.5 text-sm font-semibold" style={{ color }}>
         {icon}
         {label}
