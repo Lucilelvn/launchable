@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 const evidencePoint = v.object({
   text: v.string(),
@@ -35,13 +36,7 @@ const feature = v.object({
 });
 
 export default defineSchema({
-  users: defineTable({
-    name: v.string(),
-    email: v.optional(v.string()),
-    avatarUrl: v.optional(v.string()),
-    plan: v.union(v.literal("free"), v.literal("premium")),
-    createdAt: v.number(),
-  }),
+  ...authTables,
 
   ideas: defineTable({
     userId: v.id("users"),
