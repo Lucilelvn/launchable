@@ -102,7 +102,7 @@ export default function AssessPage() {
   useEffect(() => {
     if (locationState?.autoSubmit && locationState.concept && !autoSubmitted.current) {
       autoSubmitted.current = true;
-      setPhase('loading');
+      setPhase('loading'); // eslint-disable-line react-hooks/set-state-in-effect -- auto-submit from Explore flow
       assess({ concept: locationState.concept });
     }
   }, [locationState, assess]);
@@ -110,7 +110,7 @@ export default function AssessPage() {
   // Animate loading steps
   useEffect(() => {
     if (phase !== 'loading') return;
-    setActiveStep(0);
+    setActiveStep(0); // eslint-disable-line react-hooks/set-state-in-effect -- reset on phase change is intentional
     const interval = setInterval(() => {
       setActiveStep((prev) => {
         if (prev < LOADING_STEPS.length - 1) return prev + 1;
@@ -123,7 +123,7 @@ export default function AssessPage() {
   // Track when API finishes
   useEffect(() => {
     if (!isLoading && phase === 'loading' && (assessment || error)) {
-      setApiDone(true);
+      setApiDone(true); // eslint-disable-line react-hooks/set-state-in-effect -- syncing API completion state
     }
   }, [isLoading, phase, assessment, error]);
 
