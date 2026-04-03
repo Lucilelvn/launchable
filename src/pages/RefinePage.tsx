@@ -85,6 +85,7 @@ export default function RefinePage() {
   }
 
   function handleContinue() {
+    if (!state) return;
     const acceptedFeatures = refinement?.features.filter((f) => f.accepted) ?? [];
     navigate('/result', {
       state: {
