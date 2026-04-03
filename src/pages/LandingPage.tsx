@@ -48,19 +48,21 @@ export default function LandingPage() {
             </span>
           </button>
 
-          <button
-            onClick={() => navigate('/explore')}
-            className="group rounded-2xl border border-gray-200 bg-white p-8 text-center hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100/50 transition-all cursor-pointer"
+          <div
+            className="relative rounded-2xl border border-gray-200 bg-white p-8 text-center opacity-60 cursor-default"
           >
+            <span className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider text-pink-400 bg-pink-50 border border-pink-200 rounded-full px-3 py-1">
+              Coming soon
+            </span>
             <h2 className="text-xl font-bold">You don't know where to start</h2>
             <p className="mt-3 text-sm text-gray-500 leading-relaxed">
               A few smart questions about your life, work, and frustrations
               and we'll surface something worth building.
             </p>
-            <span className="inline-block mt-5 text-sm font-semibold rounded-full px-5 py-2 transition-all border border-pink-200 bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent group-hover:text-white group-hover:bg-clip-padding group-hover:border-transparent group-hover:shadow-md group-hover:shadow-pink-200/50">
+            <span className="inline-block mt-5 text-sm font-semibold rounded-full px-5 py-2 border border-pink-200 bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">
               Let's find your idea
             </span>
-          </button>
+          </div>
         </div>
       </div>
     </PageLayout>
