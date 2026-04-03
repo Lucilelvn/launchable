@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Loader2, SendHorizonal, Rocket } from 'lucide-react';
-import { getClient } from '../lib/groq';
+import { useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { CONCEPT_PROMPT } from '../lib/prompts';
 import { IS_LOCAL_LLM, localGenerateConcept } from '../lib/local-llm';
 
@@ -62,6 +63,7 @@ type Branch = 'job' | 'hobby' | null;
 
 export default function ExplorePage() {
   const navigate = useNavigate();
+  const generateConceptAction = useAction(api.ai.generateConcept);
   const [phase, setPhase] = useState<'interstitial' | 'tree'>('interstitial');
 
   const [step, setStep] = useState<Step>(1);
@@ -146,26 +148,20 @@ export default function ExplorePage() {
     setConceptLoading(true);
     setError(null);
     try {
-      const userInput = `Branch: ${branch}\nRole/interest: ${role}\nCurrent method: ${answer}`;
-      let text: string;
+      let parsed: { concept: string };
 
       if (IS_LOCAL_LLM) {
-        text = await localGenerateConcept(userInput, CONCEPT_PROMPT);
+        const userInput = `Branch: ${branch}\nRole/interest: ${role}\nCurrent method: ${answer}`;
+        const text = await localGenerateConcept(userInput, CONCEPT_PROMPT);
+        parsed = JSON.parse(text) as { concept: string };
       } else {
-        const client = getClient();
-        const response = await client.chat.completions.create({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 100,
-          response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: CONCEPT_PROMPT },
-            { role: 'user', content: userInput },
-          ],
+        // Production: use server-side Convex action
+        parsed = await generateConceptAction({
+          branch: branch!,
+          role: role!,
+          method: answer,
         });
-        text = response.choices[0]?.message?.content ?? '';
       }
-
-      const parsed = JSON.parse(text) as { concept: string };
 
       await new Promise((r) => setTimeout(r, 600));
 
