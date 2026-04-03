@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { getAnthropicClient } from '../lib/claude';
+import { useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { REFINE_SYSTEM_PROMPT } from '../lib/prompts';
 import { IS_MOCK, mockRefine } from '../lib/mock';
 import { IS_LOCAL_LLM, localRefine } from '../lib/local-llm';
@@ -9,19 +10,11 @@ export function useRefineIdea() {
   const [isLoading, setIsLoading] = useState(false);
   const [refinement, setRefinement] = useState<Refinement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const refineAction = useAction(api.ai.refine);
 
   const refine = useCallback(async (concept: string, audience: string | undefined, assessment: Assessment) => {
     setIsLoading(true);
     setError(null);
-
-    const parts = [
-      `Idea: ${concept}`,
-      `Verdict: ${assessment.verdict}`,
-      `Demand: ${assessment.demand.score}/10 — ${assessment.demand.summary}`,
-      `Competition: ${assessment.competition.score}/10 — ${assessment.competition.summary}`,
-      `Shippability: ${assessment.shippability.score}/10 — ${assessment.shippability.summary}`,
-    ];
-    if (audience) parts.push(`Target audience: ${audience}`);
 
     try {
       if (IS_MOCK) {
@@ -30,36 +23,45 @@ export function useRefineIdea() {
         return;
       }
 
-      let text: string;
-
       if (IS_LOCAL_LLM) {
-        text = await localRefine(parts.join('\n'), REFINE_SYSTEM_PROMPT);
-      } else {
-        const client = getAnthropicClient();
-        const response = await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 2048,
-          system: REFINE_SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: parts.join('\n') }],
-        });
+        const parts = [
+          `Idea: ${concept}`,
+          `Verdict: ${assessment.verdict}`,
+          `Demand: ${assessment.demand.score}/10 — ${assessment.demand.summary}`,
+          `Competition: ${assessment.competition.score}/10 — ${assessment.competition.summary}`,
+          `Shippability: ${assessment.shippability.score}/10 — ${assessment.shippability.summary}`,
+        ];
+        if (audience) parts.push(`Target audience: ${audience}`);
 
-        const textBlock = response.content.find((b) => b.type === 'text');
-        text = textBlock && 'text' in textBlock ? textBlock.text : '';
+        const text = await localRefine(parts.join('\n'), REFINE_SYSTEM_PROMPT);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No valid JSON found in response');
+
+        const parsed = JSON.parse(jsonMatch[0]) as Refinement;
+        parsed.features = parsed.features.map((f) => ({ ...f, accepted: true }));
+        setRefinement(parsed);
+        return;
       }
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No valid JSON found in response');
-
-      const parsed = JSON.parse(jsonMatch[0]) as Refinement;
-      // Mark all features as accepted by default
-      parsed.features = parsed.features.map((f) => ({ ...f, accepted: true }));
+      // Production: use server-side Convex action
+      const parsed = await refineAction({
+        concept,
+        audience,
+        verdict: assessment.verdict,
+        demandScore: assessment.demand.score,
+        demandSummary: assessment.demand.summary,
+        competitionScore: assessment.competition.score,
+        competitionSummary: assessment.competition.summary,
+        shippabilityScore: assessment.shippability.score,
+        shippabilitySummary: assessment.shippability.summary,
+      }) as Refinement;
       setRefinement(parsed);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refineAction]);
 
   return { isLoading, refinement, setRefinement, error, refine };
 }

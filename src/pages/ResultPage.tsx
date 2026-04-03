@@ -10,9 +10,8 @@ import {
   Star,
   Bookmark,
 } from 'lucide-react';
-import { getAnthropicClient } from '../lib/claude';
 import { BUILD_PROMPT_SYSTEM } from '../lib/prompts';
-import { useMutation } from 'convex/react';
+import { useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { BUILD_TOOLS } from '../lib/constants';
 import { IS_MOCK, mockBuildPrompt, mockGenerateTitle } from '../lib/mock';
@@ -41,6 +40,8 @@ export default function ResultPage() {
   const navigate = useNavigate();
   const state = location.state as RefinedResultState | LegacyResultState | null;
   const saveIdea = useMutation(api.ideas.save);
+  const buildPromptAction = useAction(api.ai.buildPrompt);
+  const generateTitleAction = useAction(api.ai.generateTitle);
 
   const [buildPrompt, setBuildPrompt] = useState<BuildPrompt | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,41 +88,44 @@ export default function ResultPage() {
         return;
       }
 
-      const featureList = s.features
-        .map((f) => `- ${f.name}: ${f.description}${f.priority === 'must-have' ? ' [MUST-HAVE]' : ' [NICE-TO-HAVE]'}`)
-        .join('\n');
-
-      const userMessage = [
-        `Idea: ${s.concept}`,
-        s.audience ? `Audience: ${s.audience}` : null,
-        `\nTarget Persona: ${s.persona.name}`,
-        s.persona.description,
-        `Pain points: ${s.persona.pain_points.join('; ')}`,
-        `\nAccepted Features:\n${featureList}`,
-        `\nAssessment: Demand ${s.assessment.demand.score}/10, Competition ${s.assessment.competition.score}/10, Shippability ${s.assessment.shippability.score}/10`,
-      ].filter(Boolean).join('\n');
-
-      let text: string;
-
       if (IS_LOCAL_LLM) {
-        text = await localBuildPrompt(userMessage, BUILD_PROMPT_SYSTEM);
-      } else {
-        const client = getAnthropicClient();
-        const response = await client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2048,
-          system: BUILD_PROMPT_SYSTEM,
-          messages: [{ role: 'user', content: userMessage }],
-        });
+        const featureList = s.features
+          .map((f) => `- ${f.name}: ${f.description}${f.priority === 'must-have' ? ' [MUST-HAVE]' : ' [NICE-TO-HAVE]'}`)
+          .join('\n');
 
-        const textBlock = response.content.find((b) => b.type === 'text');
-        text = textBlock && 'text' in textBlock ? textBlock.text : '';
+        const userMessage = [
+          `Idea: ${s.concept}`,
+          s.audience ? `Audience: ${s.audience}` : null,
+          `\nTarget Persona: ${s.persona.name}`,
+          s.persona.description,
+          `Pain points: ${s.persona.pain_points.join('; ')}`,
+          `\nAccepted Features:\n${featureList}`,
+          `\nAssessment: Demand ${s.assessment.demand.score}/10, Competition ${s.assessment.competition.score}/10, Shippability ${s.assessment.shippability.score}/10`,
+        ].filter(Boolean).join('\n');
+
+        const text = await localBuildPrompt(userMessage, BUILD_PROMPT_SYSTEM);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No valid JSON in response');
+        setBuildPrompt(JSON.parse(jsonMatch[0]) as BuildPrompt);
+        return;
       }
 
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No valid JSON in response');
-
-      const parsed = JSON.parse(jsonMatch[0]) as BuildPrompt;
+      // Production: use server-side Convex action
+      const parsed = await buildPromptAction({
+        concept: s.concept,
+        audience: s.audience,
+        personaName: s.persona.name,
+        personaDescription: s.persona.description,
+        personaPainPoints: s.persona.pain_points,
+        features: s.features.map((f) => ({
+          name: f.name,
+          description: f.description,
+          priority: f.priority,
+        })),
+        demandScore: s.assessment.demand.score,
+        competitionScore: s.assessment.competition.score,
+        shippabilityScore: s.assessment.shippability.score,
+      }) as BuildPrompt;
       setBuildPrompt(parsed);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -156,17 +160,7 @@ export default function ResultPage() {
       }
     }
     try {
-      const client = getAnthropicClient();
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 30,
-        messages: [{
-          role: 'user',
-          content: `Summarize this product idea into exactly 3-5 words as a short catchy title. No quotes, no punctuation, no explanation — just the title.\n\nIdea: ${concept}`,
-        }],
-      });
-      const block = response.content.find((b) => b.type === 'text');
-      return block && 'text' in block ? block.text.trim() : concept.split(/\s+/).slice(0, 5).join(' ');
+      return await generateTitleAction({ concept });
     } catch {
       return concept.split(/\s+/).slice(0, 5).join(' ');
     }
