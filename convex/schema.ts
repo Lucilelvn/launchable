@@ -69,4 +69,12 @@ export default defineSchema({
     count: v.number(),
     periodStart: v.number(),
   }).index("by_user", ["userId"]),
+
+  waitlist: defineTable({
+    email: v.string(),
+    userId: v.optional(v.id("users")),
+    createdAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_user", ["userId"]),
 });

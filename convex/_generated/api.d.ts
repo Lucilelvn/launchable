@@ -15,6 +15,7 @@ import type * as ideas from "../ideas.js";
 import type * as prompts from "../prompts.js";
 import type * as usage from "../usage.js";
 import type * as users from "../users.js";
+import type * as waitlist from "../waitlist.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   prompts: typeof prompts;
   usage: typeof usage;
   users: typeof users;
+  waitlist: typeof waitlist;
 }>;
 
 /**
