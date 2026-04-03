@@ -1,4 +1,7 @@
-import { X, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { X, Zap, Check } from 'lucide-react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 interface PaywallModalProps {
   open: boolean;
@@ -6,15 +9,30 @@ interface PaywallModalProps {
 }
 
 export default function PaywallModal({ open, onClose }: PaywallModalProps) {
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const joinWaitlist = useMutation(api.waitlist.join);
+  const waitlistStatus = useQuery(api.waitlist.check);
+
   if (!open) return null;
 
-  const priceId = import.meta.env.VITE_STRIPE_PRICE_ID as string | undefined;
+  const alreadyJoined = waitlistStatus?.joined || submitted;
 
-  function handleUpgrade() {
-    if (!priceId) return;
-    const successUrl = `${window.location.origin}/assess?upgraded=true`;
-    const cancelUrl = window.location.href;
-    window.location.href = `https://buy.stripe.com/${priceId}?success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+    try {
+      await joinWaitlist({ email: trimmed });
+      setSubmitted(true);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    }
   }
 
   return (
@@ -34,7 +52,7 @@ export default function PaywallModal({ open, onClose }: PaywallModalProps) {
           </div>
           <h2 className="text-xl font-bold text-gray-900">You've used all free assessments</h2>
           <p className="text-sm text-gray-500">
-            Upgrade to get unlimited idea assessments, mutations, and build prompts.
+            Unlimited assessments are coming soon. Leave your email and we'll let you know when it's ready.
           </p>
         </div>
 
@@ -53,13 +71,29 @@ export default function PaywallModal({ open, onClose }: PaywallModalProps) {
           </li>
         </ul>
 
-        <button
-          onClick={handleUpgrade}
-          disabled={!priceId}
-          className="w-full rounded-xl bg-gradient-to-r from-orange-400 to-pink-400 px-4 py-3 text-sm font-semibold text-white hover:from-orange-500 hover:to-pink-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-        >
-          Upgrade Now
-        </button>
+        {alreadyJoined ? (
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
+            <Check className="h-4 w-4 text-green-500" />
+            <span className="text-sm font-medium text-green-700">You're on the list! We'll email you when it's ready.</span>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100 transition-all"
+            />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-gradient-to-r from-orange-400 to-pink-400 px-4 py-3 text-sm font-semibold text-white hover:from-orange-500 hover:to-pink-500 transition-all cursor-pointer shadow-sm"
+            >
+              Join the waitlist
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
