@@ -67,7 +67,7 @@ export default function ExplorePage() {
   const [step, setStep] = useState<Step>(1);
   const [branch, setBranch] = useState<Branch>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [method, setMethod] = useState<string | null>(null);
+
   const [concept, setConcept] = useState<string | null>(null);
   const [conceptLoading, setConceptLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,7 +134,6 @@ export default function ExplorePage() {
   }
 
   async function selectStep3(answer: string) {
-    setMethod(answer);
     setMessages((prev) => [
       ...prev,
       { role: 'user', content: answer },
